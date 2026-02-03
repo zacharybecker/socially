@@ -1,0 +1,37 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper to check file size (100MB limit)
+    function isValidSize() {
+      return request.resource.size < 100 * 1024 * 1024;
+    }
+
+    // Helper to check allowed content types
+    function isValidContentType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('video/.*');
+    }
+
+    // Organization media files
+    match /{orgId}/{allPaths=**} {
+      // Allow read if authenticated (public URLs are generated server-side)
+      allow read: if isAuthenticated();
+      
+      // Allow upload if authenticated and valid file
+      allow create: if isAuthenticated() && 
+                       isValidSize() && 
+                       isValidContentType();
+      
+      // Allow delete if authenticated
+      allow delete: if isAuthenticated();
+      
+      // No updates allowed (must delete and re-upload)
+      allow update: if false;
+    }
+  }
+}

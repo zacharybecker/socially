@@ -1,0 +1,243 @@
+import { FastifyInstance } from "fastify";
+import { authenticate, requireOrgMembership } from "../middleware/auth.js";
+import { db } from "../services/firebase.js";
+import { Timestamp } from "firebase-admin/firestore";
+import { SocialAccount, SocialAccountResponse, Platform } from "../types/index.js";
+import { createError } from "../middleware/errorHandler.js";
+import { getTikTokAuthUrl, exchangeTikTokCode } from "../services/tiktok.js";
+import { getInstagramAuthUrl, exchangeInstagramCode } from "../services/instagram.js";
+
+export async function accountRoutes(fastify: FastifyInstance) {
+  // List connected accounts
+  fastify.get<{
+    Params: { orgId: string };
+  }>(
+    "/",
+    { preHandler: [authenticate, requireOrgMembership] },
+    async (request, reply) => {
+      const { orgId } = request.params;
+
+      try {
+        const accountsSnapshot = await db.socialAccounts(orgId).get();
+
+        const accounts: SocialAccountResponse[] = accountsSnapshot.docs.map((doc) => {
+          const data = doc.data() as SocialAccount;
+          return {
+            id: doc.id,
+            platform: data.platform,
+            platformUserId: data.platformUserId,
+            username: data.username,
+            profileImage: data.profileImage,
+            connectedAt: data.connectedAt.toDate(),
+            lastSyncAt: data.lastSyncAt?.toDate() || null,
+          };
+        });
+
+        return reply.send({
+          success: true,
+          data: accounts,
+        });
+      } catch (error) {
+        request.log.error(error, "Error listing accounts");
+        return reply.status(500).send({
+          success: false,
+          error: "Failed to list accounts",
+        });
+      }
+    }
+  );
+
+  // Get OAuth URL for connecting an account
+  fastify.get<{
+    Params: { orgId: string; platform: Platform };
+  }>(
+    "/connect/:platform",
+    { preHandler: [authenticate, requireOrgMembership] },
+    async (request, reply) => {
+      const { orgId, platform } = request.params;
+
+      try {
+        let authUrl: string;
+        const state = Buffer.from(
+          JSON.stringify({ orgId, userId: request.user!.uid })
+        ).toString("base64");
+
+        switch (platform) {
+          case "tiktok":
+            authUrl = getTikTokAuthUrl(state);
+            break;
+          case "instagram":
+            authUrl = getInstagramAuthUrl(state);
+            break;
+          default:
+            throw createError(`Platform ${platform} is not supported yet`, 400);
+        }
+
+        return reply.send({
+          success: true,
+          data: { authUrl },
+        });
+      } catch (error) {
+        if ((error as { statusCode?: number }).statusCode) {
+          throw error;
+        }
+        request.log.error(error, "Error generating auth URL");
+        return reply.status(500).send({
+          success: false,
+          error: "Failed to generate authorization URL",
+        });
+      }
+    }
+  );
+
+  // OAuth callback handler
+  fastify.get<{
+    Params: { orgId: string; platform: Platform };
+    Querystring: { code: string; state: string };
+  }>(
+    "/callback/:platform",
+    async (request, reply) => {
+      const { platform } = request.params;
+      const { code, state } = request.query;
+
+      try {
+        const stateData = JSON.parse(Buffer.from(state, "base64").toString());
+        const { orgId, userId } = stateData;
+
+        let accountData: Partial<SocialAccount>;
+
+        switch (platform) {
+          case "tiktok":
+            accountData = await exchangeTikTokCode(code);
+            break;
+          case "instagram":
+            accountData = await exchangeInstagramCode(code);
+            break;
+          default:
+            throw createError(`Platform ${platform} is not supported`, 400);
+        }
+
+        // Check if account already connected
+        const existingAccount = await db.socialAccounts(orgId)
+          .where("platformUserId", "==", accountData.platformUserId)
+          .where("platform", "==", platform)
+          .get();
+
+        if (!existingAccount.empty) {
+          // Update existing account
+          const docId = existingAccount.docs[0].id;
+          await db.socialAccount(orgId, docId).update({
+            ...accountData,
+            connectedAt: Timestamp.now(),
+          });
+
+          // Redirect to frontend with success
+          return reply.redirect(
+            `${process.env.FRONTEND_URL}/dashboard/accounts?connected=${platform}`
+          );
+        }
+
+        // Create new account
+        const fullAccountData: Omit<SocialAccount, "id"> = {
+          platform,
+          accessToken: accountData.accessToken!,
+          refreshToken: accountData.refreshToken || null,
+          tokenExpiresAt: accountData.tokenExpiresAt || null,
+          platformUserId: accountData.platformUserId!,
+          username: accountData.username!,
+          profileImage: accountData.profileImage || null,
+          connectedAt: Timestamp.now(),
+          lastSyncAt: null,
+        };
+
+        await db.socialAccounts(orgId).add(fullAccountData);
+
+        // Redirect to frontend with success
+        return reply.redirect(
+          `${process.env.FRONTEND_URL}/dashboard/accounts?connected=${platform}`
+        );
+      } catch (error) {
+        request.log.error(error, "OAuth callback error");
+        return reply.redirect(
+          `${process.env.FRONTEND_URL}/dashboard/accounts?error=connection_failed`
+        );
+      }
+    }
+  );
+
+  // Disconnect account
+  fastify.delete<{
+    Params: { orgId: string; accountId: string };
+  }>(
+    "/:accountId",
+    { preHandler: [authenticate, requireOrgMembership] },
+    async (request, reply) => {
+      const { orgId, accountId } = request.params;
+
+      try {
+        const accountDoc = await db.socialAccount(orgId, accountId).get();
+
+        if (!accountDoc.exists) {
+          throw createError("Account not found", 404);
+        }
+
+        await db.socialAccount(orgId, accountId).delete();
+
+        return reply.send({
+          success: true,
+          message: "Account disconnected successfully",
+        });
+      } catch (error) {
+        if ((error as { statusCode?: number }).statusCode) {
+          throw error;
+        }
+        request.log.error(error, "Error disconnecting account");
+        return reply.status(500).send({
+          success: false,
+          error: "Failed to disconnect account",
+        });
+      }
+    }
+  );
+
+  // Refresh account token
+  fastify.post<{
+    Params: { orgId: string; accountId: string };
+  }>(
+    "/:accountId/refresh",
+    { preHandler: [authenticate, requireOrgMembership] },
+    async (request, reply) => {
+      const { orgId, accountId } = request.params;
+
+      try {
+        const accountDoc = await db.socialAccount(orgId, accountId).get();
+
+        if (!accountDoc.exists) {
+          throw createError("Account not found", 404);
+        }
+
+        const accountData = accountDoc.data() as SocialAccount;
+
+        // Token refresh logic would go here based on platform
+        // For now, just return success
+        await db.socialAccount(orgId, accountId).update({
+          lastSyncAt: Timestamp.now(),
+        });
+
+        return reply.send({
+          success: true,
+          message: "Account refreshed successfully",
+        });
+      } catch (error) {
+        if ((error as { statusCode?: number }).statusCode) {
+          throw error;
+        }
+        request.log.error(error, "Error refreshing account");
+        return reply.status(500).send({
+          success: false,
+          error: "Failed to refresh account",
+        });
+      }
+    }
+  );
+}
