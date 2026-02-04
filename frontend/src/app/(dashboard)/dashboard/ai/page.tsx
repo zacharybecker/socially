@@ -18,27 +18,32 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Copy, Lightbulb, MessageSquare, Sparkles, Video, RefreshCw, Check } from "lucide-react";
 import { toast } from "sonner";
+import { api, endpoints } from "@/lib/api";
 
 export default function AIStudioPage() {
   const [hookTopic, setHookTopic] = useState("");
   const [hookTone, setHookTone] = useState("casual");
   const [hooks, setHooks] = useState<string[]>([]);
   const [hookLoading, setHookLoading] = useState(false);
+  const [hookError, setHookError] = useState<string | null>(null);
 
   const [captionTopic, setCaptionTopic] = useState("");
   const [captionPlatform, setCaptionPlatform] = useState("instagram");
   const [captionTone, setCaptionTone] = useState("casual");
   const [captions, setCaptions] = useState<string[]>([]);
   const [captionLoading, setCaptionLoading] = useState(false);
+  const [captionError, setCaptionError] = useState<string | null>(null);
 
   const [ideaNiche, setIdeaNiche] = useState("");
   const [ideas, setIdeas] = useState<string[]>([]);
   const [ideaLoading, setIdeaLoading] = useState(false);
+  const [ideaError, setIdeaError] = useState<string | null>(null);
 
   const [scriptTopic, setScriptTopic] = useState("");
   const [scriptDuration, setScriptDuration] = useState("30s");
   const [script, setScript] = useState("");
   const [scriptLoading, setScriptLoading] = useState(false);
+  const [scriptError, setScriptError] = useState<string | null>(null);
 
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -55,17 +60,20 @@ export default function AIStudioPage() {
       return;
     }
     setHookLoading(true);
+    setHookError(null);
     try {
-      // Mock response - will be replaced with API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setHooks([
-        `Stop scrolling! Here's something about ${hookTopic} you need to know...`,
-        `Nobody talks about this ${hookTopic} secret...`,
-        `I wish I knew this about ${hookTopic} sooner...`,
-        `The truth about ${hookTopic} that experts won't tell you...`,
-        `This ${hookTopic} hack changed everything for me...`,
-      ]);
+      const response = await api.post<{ success: boolean; data: { hooks: string[] } }>(
+        endpoints.ai.generateHook,
+        {
+          topic: hookTopic,
+          tone: hookTone,
+          count: 5,
+        }
+      );
+      setHooks(response.data?.hooks ?? []);
     } catch (error) {
+      console.error("Failed to generate hooks:", error);
+      setHookError("We couldn't generate hooks right now. Please try again.");
       toast.error("Failed to generate hooks");
     } finally {
       setHookLoading(false);
@@ -78,13 +86,22 @@ export default function AIStudioPage() {
       return;
     }
     setCaptionLoading(true);
+    setCaptionError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setCaptions([
-        `${captionTopic} is more than just a trend - it's a lifestyle.\n\nHere's why you should care...\n\n#${captionTopic.replace(/\s+/g, "")} #viral #fyp`,
-        `Let's talk about ${captionTopic}.\n\nMost people get this wrong, but not you.\n\nSave this for later!\n\n#trending #tips`,
-      ]);
+      const response = await api.post<{ success: boolean; data: { captions: string[] } }>(
+        endpoints.ai.generateCaption,
+        {
+          topic: captionTopic,
+          platform: captionPlatform,
+          tone: captionTone,
+          includeHashtags: true,
+          maxLength: 2200,
+        }
+      );
+      setCaptions(response.data?.captions ?? []);
     } catch (error) {
+      console.error("Failed to generate captions:", error);
+      setCaptionError("We couldn't generate captions right now. Please try again.");
       toast.error("Failed to generate captions");
     } finally {
       setCaptionLoading(false);
@@ -97,19 +114,19 @@ export default function AIStudioPage() {
       return;
     }
     setIdeaLoading(true);
+    setIdeaError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setIdeas([
-        `Day in the life of a ${ideaNiche} creator`,
-        `Top 5 mistakes beginners make in ${ideaNiche}`,
-        `${ideaNiche} trends you need to try in 2024`,
-        `Behind the scenes: How I create ${ideaNiche} content`,
-        `Reacting to viral ${ideaNiche} content`,
-        `${ideaNiche} Q&A - Answering your questions`,
-        `My ${ideaNiche} journey: Where I started vs now`,
-        `${ideaNiche} tools and equipment I can't live without`,
-      ]);
+      const response = await api.post<{ success: boolean; data: { ideas: string[] } }>(
+        endpoints.ai.generateIdeas,
+        {
+          niche: ideaNiche,
+          count: 8,
+        }
+      );
+      setIdeas(response.data?.ideas ?? []);
     } catch (error) {
+      console.error("Failed to generate ideas:", error);
+      setIdeaError("We couldn't generate ideas right now. Please try again.");
       toast.error("Failed to generate ideas");
     } finally {
       setIdeaLoading(false);
@@ -122,23 +139,19 @@ export default function AIStudioPage() {
       return;
     }
     setScriptLoading(true);
+    setScriptError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setScript(`[HOOK - 0:00]
-Stop what you're doing - this ${scriptTopic} tip will change your life.
-
-[PROBLEM - 0:05]
-Most people struggle with ${scriptTopic} because they're doing it wrong.
-
-[SOLUTION - 0:15]
-Here's the secret: [Insert your unique insight here]
-
-[PROOF - 0:25]
-I've seen this work for hundreds of people, including myself.
-
-[CTA - 0:28]
-Follow for more ${scriptTopic} tips. Save this video and try it today!`);
+      const response = await api.post<{ success: boolean; data: { script: string } }>(
+        endpoints.ai.generateScript,
+        {
+          topic: scriptTopic,
+          duration: scriptDuration,
+        }
+      );
+      setScript(response.data?.script ?? "");
     } catch (error) {
+      console.error("Failed to generate script:", error);
+      setScriptError("We couldn't generate a script right now. Please try again.");
       toast.error("Failed to generate script");
     } finally {
       setScriptLoading(false);
@@ -234,6 +247,7 @@ Follow for more ${scriptTopic} tips. Save this video and try it today!`);
                     <div className="text-center py-8 text-slate-400">
                       <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your generated hooks will appear here</p>
+                      {hookError && <p className="text-sm text-rose-400 mt-2">{hookError}</p>}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -331,6 +345,7 @@ Follow for more ${scriptTopic} tips. Save this video and try it today!`);
                     <div className="text-center py-8 text-slate-400">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your generated captions will appear here</p>
+                      {captionError && <p className="text-sm text-rose-400 mt-2">{captionError}</p>}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -401,6 +416,7 @@ Follow for more ${scriptTopic} tips. Save this video and try it today!`);
                     <div className="text-center py-8 text-slate-400">
                       <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your content ideas will appear here</p>
+                      {ideaError && <p className="text-sm text-rose-400 mt-2">{ideaError}</p>}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -507,6 +523,7 @@ Follow for more ${scriptTopic} tips. Save this video and try it today!`);
                     <div className="text-center py-8 text-slate-400">
                       <Video className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your script will appear here</p>
+                      {scriptError && <p className="text-sm text-rose-400 mt-2">{scriptError}</p>}
                     </div>
                   ) : (
                     <Textarea
