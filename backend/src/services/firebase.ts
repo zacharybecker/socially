@@ -86,4 +86,7 @@ export const db = {
   // Scheduled Jobs
   scheduledJobs: () => getFirestore().collection("scheduledJobs"),
   scheduledJob: (jobId: string) => getFirestore().collection("scheduledJobs").doc(jobId),
+
+  // Collection group queries
+  socialAccountsGroup: () => getFirestore().collectionGroup("socialAccounts"),
 };

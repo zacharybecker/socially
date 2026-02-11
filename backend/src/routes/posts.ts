@@ -46,31 +46,23 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { orgId } = request.params;
       const { status, limit, offset } = validateBody(listPostsQuerySchema, request.query);
 
-      try {
-        let query = db.posts(orgId).orderBy("createdAt", "desc");
+      let query = db.posts(orgId).orderBy("createdAt", "desc");
 
-        if (status) {
-          query = query.where("status", "==", status);
-        }
-
-        const snapshot = await query.limit(limit).offset(offset).get();
-
-        const posts = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        return reply.send({
-          success: true,
-          data: posts,
-        });
-      } catch (error) {
-        request.log.error(error, "Error listing posts");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to list posts",
-        });
+      if (status) {
+        query = query.where("status", "==", status);
       }
+
+      const snapshot = await query.limit(limit).offset(offset).get();
+
+      const posts = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return reply.send({
+        success: true,
+        data: posts,
+      });
     }
   );
 
@@ -88,70 +80,64 @@ export async function postRoutes(fastify: FastifyInstance) {
         throw createError("Content or media is required", 400);
       }
 
-      try {
-        // Verify all accounts exist
-        const accountPromises = accountIds.map((id) =>
-          db.socialAccount(orgId, id).get()
-        );
-        const accountDocs = await Promise.all(accountPromises);
+      // Verify all accounts exist
+      const accountPromises = accountIds.map((id) =>
+        db.socialAccount(orgId, id).get()
+      );
+      const accountDocs = await Promise.all(accountPromises);
 
-        const invalidAccounts = accountDocs.filter((doc) => !doc.exists);
-        if (invalidAccounts.length > 0) {
-          throw createError("One or more selected accounts not found", 400);
-        }
-
-        const platforms: PostPlatform[] = accountIds.map((accountId) => ({
-          accountId,
-          status: "draft" as const,
-          platformPostId: null,
-          errorMessage: null,
-        }));
-
-        const now = Timestamp.now();
-        const isScheduled = scheduledAt && new Date(scheduledAt) > new Date();
-
-        const postData: Omit<Post, "id"> = {
-          organizationId: orgId,
-          status: isScheduled ? "scheduled" : "draft",
-          content: content || "",
-          mediaUrls,
-          scheduledAt: scheduledAt ? Timestamp.fromDate(new Date(scheduledAt)) : null,
-          publishedAt: null,
-          createdByUserId: request.user!.uid,
-          createdAt: now,
-          updatedAt: now,
-          platforms,
-        };
-
-        const docRef = await db.posts(orgId).add(postData);
-
-        // If scheduled, create a scheduled job
-        if (isScheduled && scheduledAt) {
-          const jobData: Omit<ScheduledJob, "id"> = {
-            postId: docRef.id,
-            orgId,
-            scheduledAt: Timestamp.fromDate(new Date(scheduledAt)),
-            status: "pending",
-            createdAt: now,
-            processedAt: null,
-          };
-          await db.scheduledJobs().add(jobData);
-        }
-
-        return reply.status(201).send({
-          success: true,
-          data: { id: docRef.id, ...postData },
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error creating post");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to create post",
-        });
+      const invalidAccounts = accountDocs.filter((doc) => !doc.exists);
+      if (invalidAccounts.length > 0) {
+        throw createError("One or more selected accounts not found", 400);
       }
+
+      const platforms: PostPlatform[] = accountIds.map((accountId) => ({
+        accountId,
+        status: "draft" as const,
+        platformPostId: null,
+        errorMessage: null,
+      }));
+
+      const now = Timestamp.now();
+      const isScheduled = scheduledAt && new Date(scheduledAt) > new Date();
+
+      const postData: Omit<Post, "id"> = {
+        organizationId: orgId,
+        status: isScheduled ? "scheduled" : "draft",
+        content: content || "",
+        mediaUrls,
+        scheduledAt: scheduledAt ? Timestamp.fromDate(new Date(scheduledAt)) : null,
+        publishedAt: null,
+        createdByUserId: request.user!.uid,
+        createdAt: now,
+        updatedAt: now,
+        platforms,
+      };
+
+      // Pre-generate post ID and batch post + job creation for atomicity
+      const postRef = db.posts(orgId).doc();
+      const batch = db.posts(orgId).firestore.batch();
+      batch.set(postRef, postData);
+
+      if (isScheduled && scheduledAt) {
+        const jobRef = db.scheduledJobs().doc();
+        const jobData: Omit<ScheduledJob, "id"> = {
+          postId: postRef.id,
+          orgId,
+          scheduledAt: Timestamp.fromDate(new Date(scheduledAt)),
+          status: "pending",
+          createdAt: now,
+          processedAt: null,
+        };
+        batch.set(jobRef, jobData);
+      }
+
+      await batch.commit();
+
+      return reply.status(201).send({
+        success: true,
+        data: { id: postRef.id, ...postData },
+      });
     }
   );
 
@@ -164,27 +150,16 @@ export async function postRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { orgId, postId } = request.params;
 
-      try {
-        const postDoc = await db.post(orgId, postId).get();
+      const postDoc = await db.post(orgId, postId).get();
 
-        if (!postDoc.exists) {
-          throw createError("Post not found", 404);
-        }
-
-        return reply.send({
-          success: true,
-          data: { id: postDoc.id, ...postDoc.data() },
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error fetching post");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to fetch post",
-        });
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
       }
+
+      return reply.send({
+        success: true,
+        data: { id: postDoc.id, ...postDoc.data() },
+      });
     }
   );
 
@@ -198,59 +173,46 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { orgId, postId } = request.params;
       const { content, mediaUrls, scheduledAt, accountIds } = validateBody(updatePostSchema, request.body);
 
-      try {
-        const postDoc = await db.post(orgId, postId).get();
+      const postDoc = await db.post(orgId, postId).get();
 
-        if (!postDoc.exists) {
-          throw createError("Post not found", 404);
-        }
-
-        const existingPost = postDoc.data() as Post;
-
-        if (existingPost.status === "published") {
-          throw createError("Cannot edit a published post", 400);
-        }
-
-        const updateData: Partial<Post> = {
-          updatedAt: Timestamp.now(),
-        };
-
-        if (content !== undefined) updateData.content = content;
-        if (mediaUrls !== undefined) updateData.mediaUrls = mediaUrls;
-        if (scheduledAt !== undefined) {
-          updateData.scheduledAt = scheduledAt
-            ? Timestamp.fromDate(new Date(scheduledAt))
-            : null;
-          updateData.status = scheduledAt ? "scheduled" : "draft";
-        }
-
-        if (accountIds !== undefined) {
-          updateData.platforms = accountIds.map((accountId) => ({
-            accountId,
-            status: "draft" as const,
-            platformPostId: null,
-            errorMessage: null,
-          }));
-        }
-
-        await db.post(orgId, postId).update(updateData);
-
-        const updatedDoc = await db.post(orgId, postId).get();
-
-        return reply.send({
-          success: true,
-          data: { id: updatedDoc.id, ...updatedDoc.data() },
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error updating post");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to update post",
-        });
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
       }
+
+      const existingPost = postDoc.data() as Post;
+
+      if (existingPost.status === "published") {
+        throw createError("Cannot edit a published post", 400);
+      }
+
+      const updateData: Partial<Post> = {
+        updatedAt: Timestamp.now(),
+      };
+
+      if (content !== undefined) updateData.content = content;
+      if (mediaUrls !== undefined) updateData.mediaUrls = mediaUrls;
+      if (scheduledAt !== undefined) {
+        updateData.scheduledAt = scheduledAt
+          ? Timestamp.fromDate(new Date(scheduledAt))
+          : null;
+        updateData.status = scheduledAt ? "scheduled" : "draft";
+      }
+
+      if (accountIds !== undefined) {
+        updateData.platforms = accountIds.map((accountId) => ({
+          accountId,
+          status: "draft" as const,
+          platformPostId: null,
+          errorMessage: null,
+        }));
+      }
+
+      await db.post(orgId, postId).update(updateData);
+
+      return reply.send({
+        success: true,
+        data: { ...existingPost, ...updateData, id: postId },
+      });
     }
   );
 
@@ -263,39 +225,30 @@ export async function postRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { orgId, postId } = request.params;
 
-      try {
-        const postDoc = await db.post(orgId, postId).get();
+      const postDoc = await db.post(orgId, postId).get();
 
-        if (!postDoc.exists) {
-          throw createError("Post not found", 404);
-        }
-
-        // Delete associated scheduled jobs
-        const jobsSnapshot = await db.scheduledJobs()
-          .where("postId", "==", postId)
-          .where("status", "==", "pending")
-          .get();
-
-        const batch = db.posts(orgId).firestore.batch();
-        jobsSnapshot.forEach((doc) => batch.delete(doc.ref));
-        batch.delete(db.post(orgId, postId));
-
-        await batch.commit();
-
-        return reply.send({
-          success: true,
-          message: "Post deleted successfully",
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error deleting post");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to delete post",
-        });
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
       }
+
+      // Delete associated scheduled jobs
+      const jobsSnapshot = await db.scheduledJobs()
+        .where("postId", "==", postId)
+        .where("status", "==", "pending")
+        .get();
+
+      const batch = db.posts(orgId).firestore.batch();
+      jobsSnapshot.forEach((doc) => batch.delete(doc.ref));
+      batch.delete(db.post(orgId, postId));
+
+      await batch.commit();
+
+      request.log.info({ audit: true, event: "post_deleted", orgId, postId }, "Post deleted");
+
+      return reply.send({
+        success: true,
+        message: "Post deleted successfully",
+      });
     }
   );
 
@@ -308,48 +261,39 @@ export async function postRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { orgId, postId } = request.params;
 
-      try {
-        const postDoc = await db.post(orgId, postId).get();
+      const postDoc = await db.post(orgId, postId).get();
 
-        if (!postDoc.exists) {
-          throw createError("Post not found", 404);
-        }
-
-        const postData = postDoc.data() as Post;
-
-        if (postData.status === "published") {
-          throw createError("Post is already published", 400);
-        }
-
-        if (postData.status === "publishing") {
-          throw createError("Post is currently being published", 400);
-        }
-
-        // Update status to publishing
-        await db.post(orgId, postId).update({
-          status: "publishing",
-          updatedAt: Timestamp.now(),
-        });
-
-        // Publish in background
-        publishPost(orgId, postId).catch((error) => {
-          request.log.error(error, "Background publish failed");
-        });
-
-        return reply.send({
-          success: true,
-          message: "Post is being published",
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error publishing post");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to publish post",
-        });
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
       }
+
+      const postData = postDoc.data() as Post;
+
+      if (postData.status === "published") {
+        throw createError("Post is already published", 400);
+      }
+
+      if (postData.status === "publishing") {
+        throw createError("Post is currently being published", 400);
+      }
+
+      // Update status to publishing
+      await db.post(orgId, postId).update({
+        status: "publishing",
+        updatedAt: Timestamp.now(),
+      });
+
+      // Publish in background
+      publishPost(orgId, postId).catch((error) => {
+        request.log.error(error, "Background publish failed");
+      });
+
+      request.log.info({ audit: true, event: "post_publish", orgId, postId }, "Post publish initiated");
+
+      return reply.send({
+        success: true,
+        message: "Post is being published",
+      });
     }
   );
 
@@ -368,64 +312,55 @@ export async function postRoutes(fastify: FastifyInstance) {
         throw createError("Scheduled time must be in the future", 400);
       }
 
-      try {
-        const postDoc = await db.post(orgId, postId).get();
+      const postDoc = await db.post(orgId, postId).get();
 
-        if (!postDoc.exists) {
-          throw createError("Post not found", 404);
-        }
-
-        const postData = postDoc.data() as Post;
-
-        if (postData.status === "published") {
-          throw createError("Cannot schedule a published post", 400);
-        }
-
-        // Update post
-        await db.post(orgId, postId).update({
-          status: "scheduled",
-          scheduledAt: Timestamp.fromDate(scheduleDate),
-          updatedAt: Timestamp.now(),
-        });
-
-        // Create or update scheduled job
-        const existingJobs = await db.scheduledJobs()
-          .where("postId", "==", postId)
-          .where("status", "==", "pending")
-          .get();
-
-        if (!existingJobs.empty) {
-          // Update existing job
-          await existingJobs.docs[0].ref.update({
-            scheduledAt: Timestamp.fromDate(scheduleDate),
-          });
-        } else {
-          // Create new job
-          const jobData: Omit<ScheduledJob, "id"> = {
-            postId,
-            orgId,
-            scheduledAt: Timestamp.fromDate(scheduleDate),
-            status: "pending",
-            createdAt: Timestamp.now(),
-            processedAt: null,
-          };
-          await db.scheduledJobs().add(jobData);
-        }
-
-        return reply.send({
-          success: true,
-          message: "Post scheduled successfully",
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error scheduling post");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to schedule post",
-        });
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
       }
+
+      const postData = postDoc.data() as Post;
+
+      if (postData.status === "published") {
+        throw createError("Cannot schedule a published post", 400);
+      }
+
+      // Batch post update + job create/update for atomicity
+      const existingJobs = await db.scheduledJobs()
+        .where("postId", "==", postId)
+        .where("status", "==", "pending")
+        .get();
+
+      const batch = db.posts(orgId).firestore.batch();
+
+      batch.update(db.post(orgId, postId), {
+        status: "scheduled",
+        scheduledAt: Timestamp.fromDate(scheduleDate),
+        updatedAt: Timestamp.now(),
+      });
+
+      if (!existingJobs.empty) {
+        batch.update(existingJobs.docs[0].ref, {
+          scheduledAt: Timestamp.fromDate(scheduleDate),
+        });
+      } else {
+        const jobRef = db.scheduledJobs().doc();
+        const jobData: Omit<ScheduledJob, "id"> = {
+          postId,
+          orgId,
+          scheduledAt: Timestamp.fromDate(scheduleDate),
+          status: "pending",
+          createdAt: Timestamp.now(),
+          processedAt: null,
+        };
+        batch.set(jobRef, jobData);
+      }
+
+      await batch.commit();
+
+      return reply.send({
+        success: true,
+        message: "Post scheduled successfully",
+      });
     }
   );
 }

@@ -26,7 +26,9 @@ export function errorHandler(
 
   // Handle known app errors
   const statusCode = (error as AppError).statusCode || error.statusCode || 500;
-  const message = error.message || "Internal server error";
+  const message = statusCode >= 500
+    ? "Internal server error"
+    : (error.message || "Internal server error");
 
   reply.status(statusCode).send({
     success: false,

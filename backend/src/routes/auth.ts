@@ -19,38 +19,30 @@ export async function authRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.uid;
 
-      try {
-        const userDoc = await db.user(userId).get();
+      const userDoc = await db.user(userId).get();
 
-        if (!userDoc.exists) {
-          // Create user profile if it doesn't exist
-          const newUser: Omit<User, "id"> = {
-            email: request.user!.email,
-            displayName: null,
-            photoURL: null,
-            planTier: "free" as PlanTier,
-            createdAt: Timestamp.now(),
-          };
+      if (!userDoc.exists) {
+        // Create user profile if it doesn't exist
+        const newUser: Omit<User, "id"> = {
+          email: request.user!.email,
+          displayName: null,
+          photoURL: null,
+          planTier: "free" as PlanTier,
+          createdAt: Timestamp.now(),
+        };
 
-          await db.user(userId).set(newUser);
-
-          return reply.send({
-            success: true,
-            data: { id: userId, ...newUser },
-          });
-        }
+        await db.user(userId).set(newUser);
 
         return reply.send({
           success: true,
-          data: { id: userDoc.id, ...userDoc.data() },
-        });
-      } catch (error) {
-        request.log.error(error, "Error fetching user profile");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to fetch user profile",
+          data: { id: userId, ...newUser },
         });
       }
+
+      return reply.send({
+        success: true,
+        data: { id: userDoc.id, ...userDoc.data() },
+      });
     }
   );
 
@@ -62,26 +54,18 @@ export async function authRoutes(fastify: FastifyInstance) {
       const userId = request.user!.uid;
       const { displayName, photoURL } = validateBody(updateProfileSchema, request.body);
 
-      try {
-        const updateData: Partial<User> = {};
-        if (displayName !== undefined) updateData.displayName = displayName;
-        if (photoURL !== undefined) updateData.photoURL = photoURL;
+      const updateData: Partial<User> = {};
+      if (displayName !== undefined) updateData.displayName = displayName;
+      if (photoURL !== undefined) updateData.photoURL = photoURL;
 
-        await db.user(userId).update(updateData);
+      await db.user(userId).update(updateData);
 
-        const updatedDoc = await db.user(userId).get();
+      const updatedDoc = await db.user(userId).get();
 
-        return reply.send({
-          success: true,
-          data: { id: updatedDoc.id, ...updatedDoc.data() },
-        });
-      } catch (error) {
-        request.log.error(error, "Error updating user profile");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to update user profile",
-        });
-      }
+      return reply.send({
+        success: true,
+        data: { id: updatedDoc.id, ...updatedDoc.data() },
+      });
     }
   );
 }

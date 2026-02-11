@@ -2,14 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
+import { createPostSchema, type CreatePostFormData } from "@/lib/schemas";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +37,6 @@ import {
 import {
   CalendarIcon,
   Clock,
-  Image as ImageIcon,
   Sparkles,
   Upload,
   X,
@@ -44,7 +53,12 @@ export default function NewPostPage() {
   const router = useRouter();
   const { currentOrganization } = useOrganization();
 
-  const [content, setContent] = useState("");
+  const form = useForm<CreatePostFormData>({
+    resolver: zodResolver(createPostSchema),
+    defaultValues: { content: "" },
+  });
+  const contentValue = form.watch("content");
+
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -119,6 +133,7 @@ export default function NewPostPage() {
 
   const handleSaveDraft = async () => {
     if (!currentOrganization) return;
+    const content = form.getValues("content");
     if (!content && mediaFiles.length === 0) {
       toast.error("Please add some content or media");
       return;
@@ -149,6 +164,7 @@ export default function NewPostPage() {
 
   const handlePublish = async (immediate: boolean = true) => {
     if (!currentOrganization) return;
+    const content = form.getValues("content");
     if (!content && mediaFiles.length === 0) {
       toast.error("Please add some content or media");
       return;
@@ -223,31 +239,42 @@ export default function NewPostPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="content" className="text-slate-200">Caption</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
-                      onClick={() => router.push("/dashboard/ai")}
-                    >
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Generate with AI
-                    </Button>
+                <Form {...form}>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="content" className="text-slate-200">Caption</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                        onClick={() => router.push("/dashboard/ai")}
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate with AI
+                      </Button>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              placeholder="What's on your mind?"
+                              className="min-h-32 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-between text-xs text-slate-400">
+                      <span>{contentValue.length} characters</span>
+                      <span>TikTok: 2200 max | Instagram: 2200 max</span>
+                    </div>
                   </div>
-                  <Textarea
-                    id="content"
-                    placeholder="What's on your mind?"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="min-h-32 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
-                  />
-                  <div className="flex justify-between text-xs text-slate-400">
-                    <span>{content.length} characters</span>
-                    <span>TikTok: 2200 max | Instagram: 2200 max</span>
-                  </div>
-                </div>
+                </Form>
 
                 {/* Media Upload */}
                 <div className="space-y-2">
