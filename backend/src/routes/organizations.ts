@@ -24,13 +24,9 @@ export async function organizationRoutes(fastify: FastifyInstance) {
         .where("ownerId", "==", userId)
         .get();
 
-      // Get organizations where user is a member
+      // Get organizations where user is a member (flat array for reliable Firestore querying)
       const memberOrgs = await db.organizations()
-        .where("members", "array-contains-any", [
-          { userId, role: "admin" },
-          { userId, role: "editor" },
-          { userId, role: "viewer" },
-        ])
+        .where("memberUserIds", "array-contains", userId)
         .get();
 
       const organizations: Organization[] = [];
@@ -69,6 +65,7 @@ export async function organizationRoutes(fastify: FastifyInstance) {
         name,
         ownerId: userId,
         members: [],
+        memberUserIds: [],
         createdAt: Timestamp.now(),
       };
 
@@ -171,14 +168,18 @@ export async function organizationRoutes(fastify: FastifyInstance) {
         throw createError("Only the owner can delete the organization", 403);
       }
 
-      // Delete all subcollections (accounts, posts)
+      // Delete all subcollections (accounts, posts) and scheduled jobs
       const accountsSnapshot = await db.socialAccounts(id).get();
       const postsSnapshot = await db.posts(id).get();
+      const jobsSnapshot = await db.scheduledJobs()
+        .where("orgId", "==", id)
+        .get();
 
       const batch = db.organizations().firestore.batch();
 
       accountsSnapshot.forEach((doc) => batch.delete(doc.ref));
       postsSnapshot.forEach((doc) => batch.delete(doc.ref));
+      jobsSnapshot.forEach((doc) => batch.delete(doc.ref));
       batch.delete(db.organization(id));
 
       await batch.commit();

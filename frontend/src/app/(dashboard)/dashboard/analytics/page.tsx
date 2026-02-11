@@ -5,6 +5,7 @@ import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
 import { api, endpoints } from "@/lib/api";
 import { Post, SocialAccount } from "@/types";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       if (!currentOrganization) return;
       try {
@@ -46,15 +48,18 @@ export default function AnalyticsPage() {
             endpoints.accounts.list(currentOrganization.id)
           ),
         ]);
+        if (cancelled) return;
         setPosts(postsRes.data ?? []);
         setAccounts(accountsRes.data ?? []);
       } catch (error) {
         console.error("Failed to fetch analytics data:", error);
+        if (!cancelled) toast.error("Failed to load analytics data");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchData();
+    return () => { cancelled = true; };
   }, [currentOrganization]);
 
   const totalPosts = posts.length;

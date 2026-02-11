@@ -18,6 +18,7 @@ export interface Organization {
   name: string;
   ownerId: string;
   members: OrganizationMember[];
+  memberUserIds: string[];
   createdAt: Timestamp;
 }
 

@@ -1,10 +1,34 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { createHmac, timingSafeEqual } from "crypto";
 import { authenticate, requireOrgMembership } from "../middleware/auth.js";
 import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
 import { SocialAccount, SocialAccountResponse, Platform } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
+
+const OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || process.env.TIKTOK_CLIENT_SECRET || "";
+
+function signOAuthState(payload: object): string {
+  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = createHmac("sha256", OAUTH_STATE_SECRET).update(data).digest("hex");
+  return `${data}.${sig}`;
+}
+
+function verifyOAuthState(state: string): unknown {
+  const dotIdx = state.lastIndexOf(".");
+  if (dotIdx === -1) return null;
+  const data = state.substring(0, dotIdx);
+  const sig = state.substring(dotIdx + 1);
+  const expected = createHmac("sha256", OAUTH_STATE_SECRET).update(data).digest("hex");
+  if (sig.length !== expected.length) return null;
+  if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  try {
+    return JSON.parse(Buffer.from(data, "base64url").toString());
+  } catch {
+    return null;
+  }
+}
 
 const callbackStateSchema = z.object({
   orgId: z.string().min(1),
@@ -55,9 +79,7 @@ export async function accountRoutes(fastify: FastifyInstance) {
       const { orgId, platform } = request.params;
 
       let authUrl: string;
-      const state = Buffer.from(
-        JSON.stringify({ orgId, userId: request.user!.uid })
-      ).toString("base64");
+      const state = signOAuthState({ orgId, userId: request.user!.uid });
 
       switch (platform) {
         case "tiktok":
@@ -88,11 +110,9 @@ export async function accountRoutes(fastify: FastifyInstance) {
       const { code, state } = request.query;
 
       try {
-        let decoded: unknown;
-        try {
-          decoded = JSON.parse(Buffer.from(state, "base64").toString());
-        } catch {
-          throw createError("Invalid OAuth state parameter", 400);
+        const decoded = verifyOAuthState(state);
+        if (!decoded) {
+          throw createError("Invalid OAuth state signature", 400);
         }
         const { orgId, userId } = callbackStateSchema.parse(decoded);
 

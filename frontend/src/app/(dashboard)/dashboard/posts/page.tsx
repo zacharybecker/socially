@@ -25,7 +25,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
-import { Post, PostStatus } from "@/types";
+import { Post, PostStatus, SocialAccount } from "@/types";
 import { format } from "date-fns";
 import { api, endpoints } from "@/lib/api";
 import { useOrganization } from "@/lib/hooks";
@@ -41,27 +41,40 @@ const statusConfig: Record<PostStatus, { label: string; color: string; icon: Rea
 
 export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const { currentOrganization } = useOrganization();
 
   useEffect(() => {
-    async function fetchPosts() {
+    let cancelled = false;
+    async function fetchData() {
       if (!currentOrganization?.id) return;
       setLoading(true);
       try {
-        const res = await api.get<{ success: boolean; data: Post[] }>(
-          endpoints.posts.list(currentOrganization.id)
-        );
-        setPosts(res.data);
+        const [postsRes, accountsRes] = await Promise.all([
+          api.get<{ success: boolean; data: Post[] }>(
+            endpoints.posts.list(currentOrganization.id)
+          ),
+          api.get<{ success: boolean; data: SocialAccount[] }>(
+            endpoints.accounts.list(currentOrganization.id)
+          ),
+        ]);
+        if (cancelled) return;
+        setPosts(postsRes.data ?? []);
+        setAccounts(accountsRes.data ?? []);
       } catch (error) {
         console.error("Failed to fetch posts:", error);
+        if (!cancelled) toast.error("Failed to load posts");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
-    fetchPosts();
+    fetchData();
+    return () => { cancelled = true; };
   }, [currentOrganization?.id]);
+
+  const accountMap = new Map(accounts.map((a) => [a.id, a.username]));
 
   const filteredPosts = posts.filter((post) => {
     if (activeTab === "all") return true;
@@ -181,7 +194,7 @@ export default function PostsPage() {
                             <div className="flex items-center gap-2">
                               {post.platforms.map((platform, idx) => (
                                 <Badge key={idx} variant="secondary" className="bg-slate-700 text-slate-300 text-xs">
-                                  {platform.accountId}
+                                  @{accountMap.get(platform.accountId) || platform.accountId}
                                 </Badge>
                               ))}
                             </div>

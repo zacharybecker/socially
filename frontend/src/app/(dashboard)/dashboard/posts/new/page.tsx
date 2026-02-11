@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,6 +61,8 @@ export default function NewPostPage() {
 
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
+  const mediaPreviewsRef = useRef(mediaPreviews);
+  mediaPreviewsRef.current = mediaPreviews;
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [scheduleTime, setScheduleTime] = useState("12:00");
@@ -70,22 +72,32 @@ export default function NewPostPage() {
   const [accountsLoading, setAccountsLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchAccounts = async () => {
       if (!currentOrganization) return;
       try {
         const response = await api.get<{ success: boolean; data: SocialAccount[] }>(
           endpoints.accounts.list(currentOrganization.id)
         );
+        if (cancelled) return;
         setAccounts(response.data ?? []);
       } catch (error) {
         console.error("Failed to fetch accounts:", error);
-        toast.error("Failed to load accounts");
+        if (!cancelled) toast.error("Failed to load accounts");
       } finally {
-        setAccountsLoading(false);
+        if (!cancelled) setAccountsLoading(false);
       }
     };
     fetchAccounts();
+    return () => { cancelled = true; };
   }, [currentOrganization]);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      mediaPreviewsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -133,9 +145,15 @@ export default function NewPostPage() {
 
   const handleSaveDraft = async () => {
     if (!currentOrganization) return;
+    const isValid = await form.trigger();
+    if (!isValid) return;
     const content = form.getValues("content");
     if (!content && mediaFiles.length === 0) {
       toast.error("Please add some content or media");
+      return;
+    }
+    if (selectedAccounts.length === 0) {
+      toast.error("Please select at least one account");
       return;
     }
 
@@ -148,7 +166,7 @@ export default function NewPostPage() {
         {
           content,
           mediaUrls,
-          accountIds: selectedAccounts.length > 0 ? selectedAccounts : [accounts[0]?.id].filter(Boolean),
+          accountIds: selectedAccounts,
         }
       );
 
@@ -164,6 +182,8 @@ export default function NewPostPage() {
 
   const handlePublish = async (immediate: boolean = true) => {
     if (!currentOrganization) return;
+    const isValid = await form.trigger();
+    if (!isValid) return;
     const content = form.getValues("content");
     if (!content && mediaFiles.length === 0) {
       toast.error("Please add some content or media");

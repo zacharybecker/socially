@@ -8,6 +8,18 @@ import { Post, PostPlatform, ScheduledJob } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
 import { publishPost } from "../services/publisher.js";
 
+function serializeTimestamps(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== null && typeof val === "object" && "toDate" in val) {
+      result[key] = (val as { toDate(): Date }).toDate().toISOString();
+    } else {
+      result[key] = val;
+    }
+  }
+  return result;
+}
+
 const postStatusEnum = z.enum(["draft", "scheduled", "publishing", "published", "failed"]);
 
 const listPostsQuerySchema = z.object({
@@ -54,10 +66,9 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       const snapshot = await query.limit(limit).offset(offset).get();
 
-      const posts = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const posts = snapshot.docs.map((doc) =>
+        serializeTimestamps({ id: doc.id, ...doc.data() })
+      );
 
       return reply.send({
         success: true,
@@ -136,7 +147,7 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       return reply.status(201).send({
         success: true,
-        data: { id: postRef.id, ...postData },
+        data: serializeTimestamps({ id: postRef.id, ...postData }),
       });
     }
   );
@@ -158,7 +169,7 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       return reply.send({
         success: true,
-        data: { id: postDoc.id, ...postDoc.data() },
+        data: serializeTimestamps({ id: postDoc.id, ...postDoc.data() }),
       });
     }
   );
@@ -209,9 +220,39 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       await db.post(orgId, postId).update(updateData);
 
+      // Manage scheduled jobs when scheduledAt changes
+      if (scheduledAt !== undefined) {
+        const existingJobs = await db.scheduledJobs()
+          .where("postId", "==", postId)
+          .where("status", "==", "pending")
+          .get();
+
+        if (scheduledAt) {
+          if (!existingJobs.empty) {
+            await existingJobs.docs[0].ref.update({
+              scheduledAt: Timestamp.fromDate(new Date(scheduledAt)),
+            });
+          } else {
+            const jobData: Omit<ScheduledJob, "id"> = {
+              postId,
+              orgId,
+              scheduledAt: Timestamp.fromDate(new Date(scheduledAt)),
+              status: "pending",
+              createdAt: Timestamp.now(),
+              processedAt: null,
+            };
+            await db.scheduledJobs().add(jobData);
+          }
+        } else {
+          const deleteBatch = db.posts(orgId).firestore.batch();
+          existingJobs.forEach((doc) => deleteBatch.delete(doc.ref));
+          if (!existingJobs.empty) await deleteBatch.commit();
+        }
+      }
+
       return reply.send({
         success: true,
-        data: { ...existingPost, ...updateData, id: postId },
+        data: serializeTimestamps({ ...existingPost, ...updateData, id: postId }),
       });
     }
   );
