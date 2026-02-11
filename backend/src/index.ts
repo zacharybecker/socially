@@ -4,6 +4,8 @@ dotenv.config();
 
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import multipart from "@fastify/multipart";
 import cookie from "@fastify/cookie";
 
@@ -44,6 +46,16 @@ async function main() {
       credentials: true,
     });
 
+    await fastify.register(helmet, {
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    });
+
+    await fastify.register(rateLimit, {
+      max: 100,
+      timeWindow: "1 minute",
+    });
+
     await fastify.register(multipart, {
       limits: {
         fileSize: 100 * 1024 * 1024, // 100MB max file size
@@ -57,13 +69,31 @@ async function main() {
     // Set error handler
     fastify.setErrorHandler(errorHandler);
 
-    // Register routes
-    await fastify.register(authRoutes, { prefix: "/auth" });
+    // Register routes with per-prefix rate limits
+    await fastify.register(async (scope) => {
+      scope.addHook("onRoute", (routeOptions) => {
+        routeOptions.config = { ...routeOptions.config, rateLimit: { max: 30, timeWindow: "1 minute" } };
+      });
+      scope.register(authRoutes, { prefix: "/auth" });
+    });
+
     await fastify.register(organizationRoutes, { prefix: "/organizations" });
     await fastify.register(accountRoutes, { prefix: "/organizations/:orgId/accounts" });
     await fastify.register(postRoutes, { prefix: "/organizations/:orgId/posts" });
-    await fastify.register(mediaRoutes, { prefix: "/organizations/:orgId/media" });
-    await fastify.register(aiRoutes, { prefix: "/ai" });
+
+    await fastify.register(async (scope) => {
+      scope.addHook("onRoute", (routeOptions) => {
+        routeOptions.config = { ...routeOptions.config, rateLimit: { max: 20, timeWindow: "1 minute" } };
+      });
+      scope.register(mediaRoutes, { prefix: "/organizations/:orgId/media" });
+    });
+
+    await fastify.register(async (scope) => {
+      scope.addHook("onRoute", (routeOptions) => {
+        routeOptions.config = { ...routeOptions.config, rateLimit: { max: 10, timeWindow: "1 minute" } };
+      });
+      scope.register(aiRoutes, { prefix: "/ai" });
+    });
 
     // Health check
     fastify.get("/health", async () => {

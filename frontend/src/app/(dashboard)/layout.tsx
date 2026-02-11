@@ -1,13 +1,16 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { Button } from "@/components/ui/button";
+import { Menu, Sparkles } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -32,8 +35,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen bg-slate-900">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto ml-64">
+      <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
+
+      {/* Mobile header */}
+      <div className="fixed top-0 left-0 right-0 z-40 flex h-14 items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 md:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-slate-300 hover:text-white hover:bg-slate-800"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+            <Sparkles className="h-3.5 w-3.5 text-white" />
+          </div>
+          <span className="text-sm font-semibold text-white">Social Manager</span>
+        </div>
+      </div>
+
+      <main className="flex-1 overflow-y-auto md:ml-64 pt-14 md:pt-0">
         {children}
       </main>
     </div>

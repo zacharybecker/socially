@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +27,9 @@ import {
 } from "lucide-react";
 import { Post, PostStatus } from "@/types";
 import { format } from "date-fns";
+import { api, endpoints } from "@/lib/api";
+import { useOrganization } from "@/lib/hooks";
+import { toast } from "sonner";
 
 const statusConfig: Record<PostStatus, { label: string; color: string; icon: React.ElementType }> = {
   draft: { label: "Draft", color: "bg-slate-600", icon: Edit },
@@ -38,7 +41,27 @@ const statusConfig: Record<PostStatus, { label: string; color: string; icon: Rea
 
 export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const { currentOrganization } = useOrganization();
+
+  useEffect(() => {
+    async function fetchPosts() {
+      if (!currentOrganization?.id) return;
+      setLoading(true);
+      try {
+        const res = await api.get<{ success: boolean; data: Post[] }>(
+          endpoints.posts.list(currentOrganization.id)
+        );
+        setPosts(res.data);
+      } catch (error) {
+        console.error("Failed to fetch posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPosts();
+  }, [currentOrganization?.id]);
 
   const filteredPosts = posts.filter((post) => {
     if (activeTab === "all") return true;
@@ -46,7 +69,14 @@ export default function PostsPage() {
   });
 
   const handleDelete = async (postId: string) => {
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    if (!currentOrganization?.id) return;
+    try {
+      await api.delete(endpoints.posts.delete(currentOrganization.id, postId));
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      toast.success("Post deleted");
+    } catch (error) {
+      toast.error("Failed to delete post");
+    }
   };
 
   return (
@@ -85,7 +115,11 @@ export default function PostsPage() {
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-0">
-            {filteredPosts.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            ) : filteredPosts.length === 0 ? (
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="flex flex-col items-center justify-center py-16">
                   <Calendar className="h-16 w-16 text-slate-600 mb-4" />
@@ -108,7 +142,7 @@ export default function PostsPage() {
                 {filteredPosts.map((post) => {
                   const status = statusConfig[post.status];
                   const StatusIcon = status.icon;
-                  
+
                   return (
                     <Card key={post.id} className="bg-slate-800/50 border-slate-700">
                       <CardContent className="p-4">

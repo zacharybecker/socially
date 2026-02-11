@@ -1,8 +1,15 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { authenticate } from "../middleware/auth.js";
+import { validateBody } from "../middleware/validation.js";
 import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
 import { User, PlanTier } from "../types/index.js";
+
+const updateProfileSchema = z.object({
+  displayName: z.string().max(100).optional(),
+  photoURL: z.string().url().nullable().optional(),
+});
 
 export async function authRoutes(fastify: FastifyInstance) {
   // Get current user profile
@@ -48,14 +55,12 @@ export async function authRoutes(fastify: FastifyInstance) {
   );
 
   // Update user profile
-  fastify.put<{
-    Body: { displayName?: string; photoURL?: string };
-  }>(
+  fastify.put(
     "/profile",
     { preHandler: authenticate },
     async (request, reply) => {
       const userId = request.user!.uid;
-      const { displayName, photoURL } = request.body;
+      const { displayName, photoURL } = validateBody(updateProfileSchema, request.body);
 
       try {
         const updateData: Partial<User> = {};

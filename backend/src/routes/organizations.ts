@@ -1,9 +1,15 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { authenticate } from "../middleware/auth.js";
+import { validateBody } from "../middleware/validation.js";
 import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
 import { Organization } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
+
+const organizationSchema = z.object({
+  name: z.string().min(1, "Organization name is required").max(100).transform((s) => s.trim()),
+});
 
 export async function organizationRoutes(fastify: FastifyInstance) {
   // List user's organizations
@@ -60,22 +66,16 @@ export async function organizationRoutes(fastify: FastifyInstance) {
   );
 
   // Create organization
-  fastify.post<{
-    Body: { name: string };
-  }>(
+  fastify.post(
     "/",
     { preHandler: authenticate },
     async (request, reply) => {
       const userId = request.user!.uid;
-      const { name } = request.body;
-
-      if (!name || name.trim().length === 0) {
-        throw createError("Organization name is required", 400);
-      }
+      const { name } = validateBody(organizationSchema, request.body);
 
       try {
         const orgData: Omit<Organization, "id"> = {
-          name: name.trim(),
+          name,
           ownerId: userId,
           members: [],
           createdAt: Timestamp.now(),
@@ -145,18 +145,13 @@ export async function organizationRoutes(fastify: FastifyInstance) {
   // Update organization
   fastify.put<{
     Params: { id: string };
-    Body: { name: string };
   }>(
     "/:id",
     { preHandler: authenticate },
     async (request, reply) => {
       const { id } = request.params;
-      const { name } = request.body;
+      const { name } = validateBody(organizationSchema, request.body);
       const userId = request.user!.uid;
-
-      if (!name || name.trim().length === 0) {
-        throw createError("Organization name is required", 400);
-      }
 
       try {
         const orgDoc = await db.organization(id).get();
@@ -172,11 +167,11 @@ export async function organizationRoutes(fastify: FastifyInstance) {
           throw createError("Only the owner can update the organization", 403);
         }
 
-        await db.organization(id).update({ name: name.trim() });
+        await db.organization(id).update({ name });
 
         return reply.send({
           success: true,
-          data: { ...orgData, id, name: name.trim() },
+          data: { ...orgData, id, name },
         });
       } catch (error) {
         if ((error as { statusCode?: number }).statusCode) {

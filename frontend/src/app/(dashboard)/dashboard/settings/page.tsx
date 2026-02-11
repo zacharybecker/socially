@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Header } from "@/components/dashboard/header";
 import { useAuth, useOrganization } from "@/lib/hooks";
+import { api, endpoints } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +16,13 @@ import { User, Building2, CreditCard, Bell, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { userProfile, updateUserProfile } = useAuth();
+  const { userProfile, updateUserProfile, resetPassword } = useAuth();
   const { currentOrganization, updateOrganization } = useOrganization();
-  
+
   const [displayName, setDisplayName] = useState(userProfile?.displayName || "");
   const [orgName, setOrgName] = useState(currentOrganization?.name || "");
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -44,6 +46,35 @@ export default function SettingsPage() {
       toast.error("Failed to update organization");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentOrganization?.id) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post<{ success: boolean; data: { url: string } }>(
+        endpoints.media.upload(currentOrganization.id),
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      await updateUserProfile(displayName || userProfile?.displayName || "", res.data.url);
+      toast.success("Photo updated");
+    } catch (error) {
+      toast.error("Failed to upload photo");
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!userProfile?.email) return;
+    try {
+      await resetPassword(userProfile.email);
+      toast.success("Password reset email sent");
+    } catch (error) {
+      toast.error("Failed to send reset email");
     }
   };
 
@@ -101,12 +132,24 @@ export default function SettingsPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleChangePhoto}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
                         Change Photo
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label className="text-slate-200">Display Name</Label>
                     <Input
@@ -115,7 +158,7 @@ export default function SettingsPage() {
                       className="bg-slate-700/50 border-slate-600 text-white"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label className="text-slate-200">Email</Label>
                     <Input
@@ -152,7 +195,12 @@ export default function SettingsPage() {
                         <p className="text-xs text-slate-400">Last changed: Never</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      onClick={handleChangePassword}
+                    >
                       Change
                     </Button>
                   </div>
@@ -161,10 +209,10 @@ export default function SettingsPage() {
                       <Shield className="h-5 w-5 text-slate-400" />
                       <div>
                         <p className="text-sm font-medium text-white">Two-Factor Auth</p>
-                        <p className="text-xs text-slate-400">Not enabled</p>
+                        <p className="text-xs text-slate-400">Not available yet</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                    <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700" disabled>
                       Enable
                     </Button>
                   </div>
@@ -191,7 +239,7 @@ export default function SettingsPage() {
                     className="bg-slate-700/50 border-slate-600 text-white max-w-md"
                   />
                 </div>
-                
+
                 <Button
                   onClick={handleSaveOrganization}
                   disabled={saving || !currentOrganization}
@@ -276,7 +324,10 @@ export default function SettingsPage() {
                       </ul>
                     </div>
                   ))}
-                  <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600">
+                  <Button
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                    onClick={() => toast.info("Billing coming soon")}
+                  >
                     Upgrade Now
                   </Button>
                 </CardContent>

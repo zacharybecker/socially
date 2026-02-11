@@ -1,9 +1,15 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { authenticate, requireOrgMembership } from "../middleware/auth.js";
 import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
 import { SocialAccount, SocialAccountResponse, Platform } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
+
+const callbackStateSchema = z.object({
+  orgId: z.string().min(1),
+  userId: z.string().min(1),
+});
 import { getTikTokAuthUrl, exchangeTikTokCode, refreshTikTokToken } from "../services/tiktok.js";
 import { getInstagramAuthUrl, exchangeInstagramCode, refreshInstagramToken } from "../services/instagram.js";
 
@@ -101,8 +107,13 @@ export async function accountRoutes(fastify: FastifyInstance) {
       const { code, state } = request.query;
 
       try {
-        const stateData = JSON.parse(Buffer.from(state, "base64").toString());
-        const { orgId, userId } = stateData;
+        let decoded: unknown;
+        try {
+          decoded = JSON.parse(Buffer.from(state, "base64").toString());
+        } catch {
+          throw createError("Invalid OAuth state parameter", 400);
+        }
+        const { orgId, userId } = callbackStateSchema.parse(decoded);
 
         let accountData: Partial<SocialAccount>;
 

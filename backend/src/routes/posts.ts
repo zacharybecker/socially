@@ -1,10 +1,38 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { authenticate, requireOrgMembership } from "../middleware/auth.js";
+import { validateBody } from "../middleware/validation.js";
 import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
-import { Post, CreatePostInput, UpdatePostInput, PostPlatform, ScheduledJob } from "../types/index.js";
+import { Post, PostPlatform, ScheduledJob } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
 import { publishPost } from "../services/publisher.js";
+
+const postStatusEnum = z.enum(["draft", "scheduled", "publishing", "published", "failed"]);
+
+const listPostsQuerySchema = z.object({
+  status: postStatusEnum.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+const createPostSchema = z.object({
+  content: z.string().max(2200).default(""),
+  mediaUrls: z.array(z.string().url()).max(10).default([]),
+  accountIds: z.array(z.string().min(1)).min(1, "At least one account must be selected"),
+  scheduledAt: z.string().datetime().nullable().optional(),
+});
+
+const updatePostSchema = z.object({
+  content: z.string().max(2200).optional(),
+  mediaUrls: z.array(z.string().url()).max(10).optional(),
+  accountIds: z.array(z.string().min(1)).optional(),
+  scheduledAt: z.string().datetime().nullable().optional(),
+});
+
+const schedulePostSchema = z.object({
+  scheduledAt: z.string().datetime({ message: "scheduledAt must be a valid ISO date string" }),
+});
 
 export async function postRoutes(fastify: FastifyInstance) {
   // List posts
@@ -16,7 +44,7 @@ export async function postRoutes(fastify: FastifyInstance) {
     { preHandler: [authenticate, requireOrgMembership] },
     async (request, reply) => {
       const { orgId } = request.params;
-      const { status, limit = 50, offset = 0 } = request.query;
+      const { status, limit, offset } = validateBody(listPostsQuerySchema, request.query);
 
       try {
         let query = db.posts(orgId).orderBy("createdAt", "desc");
@@ -49,20 +77,15 @@ export async function postRoutes(fastify: FastifyInstance) {
   // Create post
   fastify.post<{
     Params: { orgId: string };
-    Body: CreatePostInput;
   }>(
     "/",
     { preHandler: [authenticate, requireOrgMembership] },
     async (request, reply) => {
       const { orgId } = request.params;
-      const { content, mediaUrls = [], scheduledAt, accountIds } = request.body;
+      const { content, mediaUrls, scheduledAt, accountIds } = validateBody(createPostSchema, request.body);
 
       if (!content && mediaUrls.length === 0) {
         throw createError("Content or media is required", 400);
-      }
-
-      if (!accountIds || accountIds.length === 0) {
-        throw createError("At least one account must be selected", 400);
       }
 
       try {
@@ -168,13 +191,12 @@ export async function postRoutes(fastify: FastifyInstance) {
   // Update post
   fastify.put<{
     Params: { orgId: string; postId: string };
-    Body: UpdatePostInput;
   }>(
     "/:postId",
     { preHandler: [authenticate, requireOrgMembership] },
     async (request, reply) => {
       const { orgId, postId } = request.params;
-      const { content, mediaUrls, scheduledAt, accountIds } = request.body;
+      const { content, mediaUrls, scheduledAt, accountIds } = validateBody(updatePostSchema, request.body);
 
       try {
         const postDoc = await db.post(orgId, postId).get();
@@ -334,17 +356,12 @@ export async function postRoutes(fastify: FastifyInstance) {
   // Schedule post
   fastify.post<{
     Params: { orgId: string; postId: string };
-    Body: { scheduledAt: string };
   }>(
     "/:postId/schedule",
     { preHandler: [authenticate, requireOrgMembership] },
     async (request, reply) => {
       const { orgId, postId } = request.params;
-      const { scheduledAt } = request.body;
-
-      if (!scheduledAt) {
-        throw createError("Scheduled time is required", 400);
-      }
+      const { scheduledAt } = validateBody(schedulePostSchema, request.body);
 
       const scheduleDate = new Date(scheduledAt);
       if (scheduleDate <= new Date()) {
