@@ -4,8 +4,8 @@ import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
 import { SocialAccount, SocialAccountResponse, Platform } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
-import { getTikTokAuthUrl, exchangeTikTokCode } from "../services/tiktok.js";
-import { getInstagramAuthUrl, exchangeInstagramCode } from "../services/instagram.js";
+import { getTikTokAuthUrl, exchangeTikTokCode, refreshTikTokToken } from "../services/tiktok.js";
+import { getInstagramAuthUrl, exchangeInstagramCode, refreshInstagramToken } from "../services/instagram.js";
 
 export async function accountRoutes(fastify: FastifyInstance) {
   // List connected accounts
@@ -218,15 +218,43 @@ export async function accountRoutes(fastify: FastifyInstance) {
 
         const accountData = accountDoc.data() as SocialAccount;
 
-        // Token refresh logic would go here based on platform
-        // For now, just return success
-        await db.socialAccount(orgId, accountId).update({
+        const updateData: Record<string, unknown> = {
           lastSyncAt: Timestamp.now(),
-        });
+        };
+
+        if (accountData.platform === "tiktok" && accountData.refreshToken) {
+          const result = await refreshTikTokToken(accountData.refreshToken);
+          updateData.accessToken = result.accessToken;
+          updateData.refreshToken = result.refreshToken;
+          updateData.tokenExpiresAt = Timestamp.fromDate(
+            new Date(Date.now() + result.expiresIn * 1000)
+          );
+        } else if (accountData.platform === "instagram") {
+          const result = await refreshInstagramToken(accountData.accessToken);
+          updateData.accessToken = result.accessToken;
+          updateData.tokenExpiresAt = Timestamp.fromDate(
+            new Date(Date.now() + result.expiresIn * 1000)
+          );
+        } else {
+          throw createError(
+            `Token refresh is not supported for ${accountData.platform}`,
+            400
+          );
+        }
+
+        await db.socialAccount(orgId, accountId).update(updateData);
 
         return reply.send({
           success: true,
-          message: "Account refreshed successfully",
+          data: {
+            id: accountId,
+            platform: accountData.platform,
+            platformUserId: accountData.platformUserId,
+            username: accountData.username,
+            profileImage: accountData.profileImage,
+            connectedAt: accountData.connectedAt.toDate(),
+            lastSyncAt: new Date(),
+          },
         });
       } catch (error) {
         if ((error as { statusCode?: number }).statusCode) {

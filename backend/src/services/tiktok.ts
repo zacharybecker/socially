@@ -104,15 +104,7 @@ export async function publishToTikTok(
   videoUrl: string,
   caption: string
 ): Promise<{ videoId: string }> {
-  // TikTok's Content Posting API requires multiple steps:
-  // 1. Initialize upload
-  // 2. Upload video chunks
-  // 3. Create post
-  
-  // This is a simplified version - full implementation requires handling
-  // video upload chunks and post creation
-  
-  // Initialize video upload
+  // Initialize video upload using PULL_FROM_URL (video hosted on Firebase Storage)
   const initResponse = await axios.post(
     "https://open.tiktokapis.com/v2/post/publish/video/init/",
     {
@@ -142,7 +134,47 @@ export async function publishToTikTok(
     );
   }
 
+  const publishId = initResponse.data.data.publish_id;
+
+  // Poll for publish status until complete or failed
+  let status = "PROCESSING_UPLOAD";
+  let attempts = 0;
+  const maxAttempts = 60; // 5 minutes max wait (5s intervals)
+
+  while (
+    (status === "PROCESSING_UPLOAD" || status === "PROCESSING_DOWNLOAD") &&
+    attempts < maxAttempts
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const statusResponse = await axios.post(
+      "https://open.tiktokapis.com/v2/post/publish/status/fetch/",
+      { publish_id: publishId },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (statusResponse.data.error.code !== "ok") {
+      throw new Error(
+        `TikTok status check failed: ${statusResponse.data.error.message}`
+      );
+    }
+
+    status = statusResponse.data.data.status;
+    attempts++;
+  }
+
+  if (status !== "PUBLISH_COMPLETE") {
+    throw new Error(
+      `TikTok publish failed with status: ${status}`
+    );
+  }
+
   return {
-    videoId: initResponse.data.data.publish_id,
+    videoId: publishId,
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
@@ -33,15 +33,17 @@ import {
   X,
   Send,
   Save,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { SocialAccount } from "@/types";
+import { SocialAccount, Post } from "@/types";
+import { api, endpoints } from "@/lib/api";
 
 export default function NewPostPage() {
   const router = useRouter();
   const { currentOrganization } = useOrganization();
-  
+
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
@@ -50,9 +52,26 @@ export default function NewPostPage() {
   const [scheduleTime, setScheduleTime] = useState("12:00");
   const [isScheduling, setIsScheduling] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
 
-  // Mock accounts - will be fetched from API
-  const accounts: SocialAccount[] = [];
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!currentOrganization) return;
+      try {
+        const response = await api.get<{ success: boolean; data: SocialAccount[] }>(
+          endpoints.accounts.list(currentOrganization.id)
+        );
+        setAccounts(response.data ?? []);
+      } catch (error) {
+        console.error("Failed to fetch accounts:", error);
+        toast.error("Failed to load accounts");
+      } finally {
+        setAccountsLoading(false);
+      }
+    };
+    fetchAccounts();
+  }, [currentOrganization]);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -80,7 +99,26 @@ export default function NewPostPage() {
     );
   };
 
+  const uploadMedia = async (): Promise<string[]> => {
+    if (!currentOrganization || mediaFiles.length === 0) return [];
+
+    const uploadedUrls: string[] = [];
+    for (const file of mediaFiles) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await api.post<{ success: boolean; data: { url: string } }>(
+        endpoints.media.upload(currentOrganization.id),
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      uploadedUrls.push(response.data.url);
+    }
+    return uploadedUrls;
+  };
+
   const handleSaveDraft = async () => {
+    if (!currentOrganization) return;
     if (!content && mediaFiles.length === 0) {
       toast.error("Please add some content or media");
       return;
@@ -88,10 +126,21 @@ export default function NewPostPage() {
 
     setLoading(true);
     try {
-      // API call to save draft
+      const mediaUrls = await uploadMedia();
+
+      await api.post(
+        endpoints.posts.create(currentOrganization.id),
+        {
+          content,
+          mediaUrls,
+          accountIds: selectedAccounts.length > 0 ? selectedAccounts : [accounts[0]?.id].filter(Boolean),
+        }
+      );
+
       toast.success("Draft saved");
       router.push("/dashboard/posts");
     } catch (error) {
+      console.error("Failed to save draft:", error);
       toast.error("Failed to save draft");
     } finally {
       setLoading(false);
@@ -99,6 +148,7 @@ export default function NewPostPage() {
   };
 
   const handlePublish = async (immediate: boolean = true) => {
+    if (!currentOrganization) return;
     if (!content && mediaFiles.length === 0) {
       toast.error("Please add some content or media");
       return;
@@ -116,11 +166,38 @@ export default function NewPostPage() {
 
     setLoading(true);
     try {
-      // API call to create/schedule post
+      const mediaUrls = await uploadMedia();
+
+      let scheduledAt: string | undefined;
+      if (!immediate && scheduleDate) {
+        const [hours, minutes] = scheduleTime.split(":").map(Number);
+        const scheduled = new Date(scheduleDate);
+        scheduled.setHours(hours, minutes, 0, 0);
+        scheduledAt = scheduled.toISOString();
+      }
+
+      const createResponse = await api.post<{ success: boolean; data: Post & { id: string } }>(
+        endpoints.posts.create(currentOrganization.id),
+        {
+          content,
+          mediaUrls,
+          accountIds: selectedAccounts,
+          scheduledAt,
+        }
+      );
+
+      if (immediate) {
+        const postId = createResponse.data.id;
+        await api.post(
+          endpoints.posts.publish(currentOrganization.id, postId)
+        );
+      }
+
       toast.success(immediate ? "Post published!" : "Post scheduled!");
       router.push("/dashboard/posts");
     } catch (error) {
-      toast.error("Failed to publish post");
+      console.error("Failed to publish post:", error);
+      toast.error(immediate ? "Failed to publish post" : "Failed to schedule post");
     } finally {
       setLoading(false);
     }
@@ -153,6 +230,7 @@ export default function NewPostPage() {
                       variant="ghost"
                       size="sm"
                       className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                      onClick={() => router.push("/dashboard/ai")}
                     >
                       <Sparkles className="mr-2 h-4 w-4" />
                       Generate with AI
@@ -220,7 +298,11 @@ export default function NewPostPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {accounts.length === 0 ? (
+                {accountsLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                  </div>
+                ) : accounts.length === 0 ? (
                   <div className="text-center py-4">
                     <p className="text-sm text-slate-400 mb-3">No accounts connected</p>
                     <Button
@@ -351,7 +433,11 @@ export default function NewPostPage() {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
               >
-                <Send className="mr-2 h-4 w-4" />
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
                 {isScheduling ? "Schedule Post" : "Publish Now"}
               </Button>
               <Button

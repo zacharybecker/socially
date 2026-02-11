@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +16,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, RefreshCw, Trash2, ExternalLink } from "lucide-react";
+import { Plus, RefreshCw, Trash2, ExternalLink, Loader2 } from "lucide-react";
 import { SocialAccount, Platform } from "@/types";
 import { toast } from "sonner";
+import { api, endpoints } from "@/lib/api";
 
 const platformConfig: Record<Platform, { name: string; color: string; icon: string }> = {
   tiktok: { name: "TikTok", color: "bg-black", icon: "T" },
@@ -31,9 +33,46 @@ const platformConfig: Record<Platform, { name: string; color: string; icon: stri
 
 export default function AccountsPage() {
   const { currentOrganization } = useOrganization();
+  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<Platform | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const fetchAccounts = async () => {
+    if (!currentOrganization) return;
+    try {
+      const response = await api.get<{ success: boolean; data: SocialAccount[] }>(
+        endpoints.accounts.list(currentOrganization.id)
+      );
+      setAccounts(response.data ?? []);
+    } catch (error) {
+      console.error("Failed to fetch accounts:", error);
+      toast.error("Failed to load accounts");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [currentOrganization]);
+
+  // Handle OAuth callback query params
+  useEffect(() => {
+    const connected = searchParams.get("connected");
+    const error = searchParams.get("error");
+
+    if (connected) {
+      toast.success(`${platformConfig[connected as Platform]?.name ?? connected} connected successfully!`);
+      fetchAccounts();
+      // Clean up URL params
+      window.history.replaceState({}, "", "/dashboard/accounts");
+    } else if (error) {
+      toast.error("Failed to connect account. Please try again.");
+      window.history.replaceState({}, "", "/dashboard/accounts");
+    }
+  }, [searchParams]);
 
   const handleConnect = async (platform: Platform) => {
     if (!currentOrganization) {
@@ -42,37 +81,45 @@ export default function AccountsPage() {
     }
 
     setConnecting(platform);
-    
+
     try {
-      // In production, this would redirect to OAuth flow
-      // For now, show a message
-      toast.info(`Connect ${platformConfig[platform].name} - OAuth flow will be implemented with backend`);
-      
-      // Simulated delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      setDialogOpen(false);
+      const response = await api.get<{ success: boolean; data: { authUrl: string } }>(
+        endpoints.accounts.connect(currentOrganization.id, platform)
+      );
+      window.location.href = response.data.authUrl;
     } catch (error) {
+      console.error("Failed to get auth URL:", error);
       toast.error(`Failed to connect ${platformConfig[platform].name}`);
-    } finally {
       setConnecting(null);
     }
   };
 
   const handleDisconnect = async (account: SocialAccount) => {
+    if (!currentOrganization) return;
+
     try {
-      // API call to disconnect
+      await api.delete(
+        endpoints.accounts.disconnect(currentOrganization.id, account.id)
+      );
       setAccounts((prev) => prev.filter((a) => a.id !== account.id));
       toast.success(`Disconnected ${account.username}`);
     } catch (error) {
+      console.error("Failed to disconnect account:", error);
       toast.error("Failed to disconnect account");
     }
   };
 
   const handleRefresh = async (account: SocialAccount) => {
+    if (!currentOrganization) return;
+
     try {
+      await api.post(
+        endpoints.accounts.refresh(currentOrganization.id, account.id)
+      );
       toast.success(`Refreshed ${account.username}`);
+      fetchAccounts();
     } catch (error) {
+      console.error("Failed to refresh account:", error);
       toast.error("Failed to refresh account");
     }
   };
@@ -132,7 +179,11 @@ export default function AccountsPage() {
       />
 
       <div className="p-6">
-        {accounts.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+          </div>
+        ) : accounts.length === 0 ? (
           <Card className="bg-slate-800/50 border-slate-700">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-700 mb-4">
