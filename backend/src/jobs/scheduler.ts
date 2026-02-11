@@ -2,7 +2,9 @@ import cron from "node-cron";
 import { Timestamp } from "firebase-admin/firestore";
 import { db } from "../services/firebase.js";
 import { publishPost } from "../services/publisher.js";
-import { ScheduledJob } from "../types/index.js";
+import { ScheduledJob, SocialAccount } from "../types/index.js";
+import { refreshTikTokToken } from "../services/tiktok.js";
+import { refreshInstagramToken } from "../services/instagram.js";
 
 let schedulerRunning = false;
 
@@ -99,17 +101,34 @@ async function refreshExpiredTokens(): Promise<void> {
 
       for (const accountDoc of accountsSnapshot.docs) {
         try {
-          const account = accountDoc.data();
+          const account = accountDoc.data() as SocialAccount;
 
-          // Refresh token logic would go here based on platform
-          // For now, just log a warning
-          console.warn(
-            `Token expiring soon for account ${accountDoc.id} (${account.platform})`
-          );
-
-          // TODO: Implement token refresh for each platform
-          // const newTokens = await refreshTokenForPlatform(account);
-          // await accountDoc.ref.update(newTokens);
+          if (account.platform === "tiktok" && account.refreshToken) {
+            const result = await refreshTikTokToken(account.refreshToken);
+            await accountDoc.ref.update({
+              accessToken: result.accessToken,
+              refreshToken: result.refreshToken,
+              tokenExpiresAt: Timestamp.fromDate(
+                new Date(Date.now() + result.expiresIn * 1000)
+              ),
+              lastSyncAt: Timestamp.now(),
+            });
+            console.log(`Refreshed TikTok token for account ${accountDoc.id}`);
+          } else if (account.platform === "instagram") {
+            const result = await refreshInstagramToken(account.accessToken);
+            await accountDoc.ref.update({
+              accessToken: result.accessToken,
+              tokenExpiresAt: Timestamp.fromDate(
+                new Date(Date.now() + result.expiresIn * 1000)
+              ),
+              lastSyncAt: Timestamp.now(),
+            });
+            console.log(`Refreshed Instagram token for account ${accountDoc.id}`);
+          } else {
+            console.warn(
+              `Cannot refresh token for account ${accountDoc.id} (${account.platform}): unsupported platform or missing refresh token`
+            );
+          }
         } catch (error) {
           console.error(
             `Failed to refresh token for account ${accountDoc.id}:`,
