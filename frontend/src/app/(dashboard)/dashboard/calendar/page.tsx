@@ -1,18 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/dashboard/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Loader2 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 import Link from "next/link";
 import { Post } from "@/types";
+import { api, endpoints } from "@/lib/api";
+import { useOrganization } from "@/lib/hooks";
 
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { currentOrganization } = useOrganization();
+
+  useEffect(() => {
+    async function fetchPosts() {
+      if (!currentOrganization?.id) return;
+      setLoading(true);
+      try {
+        const res = await api.get<{ success: boolean; data: Post[] }>(
+          endpoints.posts.list(currentOrganization.id)
+        );
+        setPosts(res.data);
+      } catch (error) {
+        console.error("Failed to fetch posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPosts();
+  }, [currentOrganization?.id, currentMonth]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -80,94 +102,102 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 gap-px mb-2">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-sm font-medium text-slate-400 py-2"
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-px bg-slate-700 rounded-lg overflow-hidden">
-              {paddedDays.map((day, index) => {
-                if (!day) {
-                  return (
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <>
+                {/* Weekday Headers */}
+                <div className="grid grid-cols-7 gap-px mb-2">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                     <div
-                      key={`empty-${index}`}
-                      className="min-h-24 bg-slate-800/50 p-2"
-                    />
-                  );
-                }
+                      key={day}
+                      className="text-center text-sm font-medium text-slate-400 py-2"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
 
-                const dayPosts = getPostsForDay(day);
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isCurrentDay = isToday(day);
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-px bg-slate-700 rounded-lg overflow-hidden">
+                  {paddedDays.map((day, index) => {
+                    if (!day) {
+                      return (
+                        <div
+                          key={`empty-${index}`}
+                          className="min-h-24 bg-slate-800/50 p-2"
+                        />
+                      );
+                    }
 
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={`min-h-24 bg-slate-800 p-2 ${
-                      !isCurrentMonth ? "opacity-40" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span
-                        className={`text-sm font-medium ${
-                          isCurrentDay
-                            ? "flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"
-                            : "text-slate-300"
+                    const dayPosts = getPostsForDay(day);
+                    const isCurrentMonth = isSameMonth(day, currentMonth);
+                    const isCurrentDay = isToday(day);
+
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        className={`min-h-24 bg-slate-800 p-2 ${
+                          !isCurrentMonth ? "opacity-40" : ""
                         }`}
                       >
-                        {format(day, "d")}
-                      </span>
-                      {isCurrentMonth && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100"
-                          asChild
-                        >
-                          <Link href={`/dashboard/posts/new?date=${format(day, "yyyy-MM-dd")}`}>
-                            <Plus className="h-3 w-3" />
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      {dayPosts.slice(0, 2).map((post) => (
-                        <Link
-                          key={post.id}
-                          href={`/dashboard/posts/${post.id}`}
-                          className="block"
-                        >
-                          <Badge
-                            className={`w-full justify-start truncate text-xs ${
-                              post.status === "published"
-                                ? "bg-green-600/20 text-green-400"
-                                : post.status === "scheduled"
-                                ? "bg-blue-600/20 text-blue-400"
-                                : "bg-slate-600/20 text-slate-400"
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className={`text-sm font-medium ${
+                              isCurrentDay
+                                ? "flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"
+                                : "text-slate-300"
                             }`}
                           >
-                            {post.content?.slice(0, 20) || "No caption"}
-                          </Badge>
-                        </Link>
-                      ))}
-                      {dayPosts.length > 2 && (
-                        <span className="text-xs text-slate-500">
-                          +{dayPosts.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                            {format(day, "d")}
+                          </span>
+                          {isCurrentMonth && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100"
+                              asChild
+                            >
+                              <Link href={`/dashboard/posts/new?date=${format(day, "yyyy-MM-dd")}`}>
+                                <Plus className="h-3 w-3" />
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          {dayPosts.slice(0, 2).map((post) => (
+                            <Link
+                              key={post.id}
+                              href={`/dashboard/posts/${post.id}`}
+                              className="block"
+                            >
+                              <Badge
+                                className={`w-full justify-start truncate text-xs ${
+                                  post.status === "published"
+                                    ? "bg-green-600/20 text-green-400"
+                                    : post.status === "scheduled"
+                                    ? "bg-blue-600/20 text-blue-400"
+                                    : "bg-slate-600/20 text-slate-400"
+                                }`}
+                              >
+                                {post.content?.slice(0, 20) || "No caption"}
+                              </Badge>
+                            </Link>
+                          ))}
+                          {dayPosts.length > 2 && (
+                            <span className="text-xs text-slate-500">
+                              +{dayPosts.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
