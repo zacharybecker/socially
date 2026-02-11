@@ -17,7 +17,7 @@ import { mediaRoutes } from "./routes/media.js";
 import { aiRoutes } from "./routes/ai.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { initializeFirebase } from "./services/firebase.js";
-import { startScheduler } from "./jobs/scheduler.js";
+import { startScheduler, stopScheduler } from "./jobs/scheduler.js";
 
 const fastify = Fastify({
   logger: {
@@ -68,6 +68,17 @@ async function main() {
 
     // Set error handler
     fastify.setErrorHandler(errorHandler);
+
+    // Request logging
+    fastify.addHook("onResponse", (request, reply, done) => {
+      request.log.info({
+        method: request.method,
+        url: request.url,
+        statusCode: reply.statusCode,
+        responseTime: reply.elapsedTime,
+      }, "request completed");
+      done();
+    });
 
     // Register routes with per-prefix rate limits
     await fastify.register(async (scope) => {
@@ -120,6 +131,7 @@ const signals = ["SIGINT", "SIGTERM"];
 signals.forEach((signal) => {
   process.on(signal, async () => {
     fastify.log.info(`Received ${signal}, shutting down gracefully...`);
+    stopScheduler();
     await fastify.close();
     process.exit(0);
   });

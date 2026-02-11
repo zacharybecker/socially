@@ -20,6 +20,7 @@ export async function authenticate(
   const authHeader = request.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    request.log.warn({ security: true, event: "auth_missing", ip: request.ip }, "Missing authorization header");
     return reply.status(401).send({
       success: false,
       error: "Missing or invalid authorization header",
@@ -37,7 +38,7 @@ export async function authenticate(
       emailVerified: decodedToken.email_verified || false,
     };
   } catch (error) {
-    request.log.error(error, "Token verification failed");
+    request.log.warn({ security: true, event: "auth_failed", ip: request.ip }, "Token verification failed");
     return reply.status(401).send({
       success: false,
       error: "Invalid or expired token",

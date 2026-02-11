@@ -7,6 +7,8 @@ import { refreshTikTokToken } from "../services/tiktok.js";
 import { refreshInstagramToken } from "../services/instagram.js";
 
 let schedulerRunning = false;
+let postSchedulerTask: cron.ScheduledTask | null = null;
+let tokenRefreshTask: cron.ScheduledTask | null = null;
 
 export function startScheduler(): void {
   if (schedulerRunning) {
@@ -18,16 +20,28 @@ export function startScheduler(): void {
   schedulerRunning = true;
 
   // Run every minute to check for scheduled posts
-  cron.schedule("* * * * *", async () => {
+  postSchedulerTask = cron.schedule("* * * * *", async () => {
     await processScheduledJobs();
   });
 
   // Run every hour to refresh tokens
-  cron.schedule("0 * * * *", async () => {
+  tokenRefreshTask = cron.schedule("0 * * * *", async () => {
     await refreshExpiredTokens();
   });
 
   console.log("Scheduler started successfully");
+}
+
+export function stopScheduler(): void {
+  if (!schedulerRunning) return;
+
+  console.log("Stopping scheduler...");
+  postSchedulerTask?.stop();
+  tokenRefreshTask?.stop();
+  postSchedulerTask = null;
+  tokenRefreshTask = null;
+  schedulerRunning = false;
+  console.log("Scheduler stopped");
 }
 
 async function processScheduledJobs(): Promise<void> {
@@ -88,53 +102,48 @@ async function refreshExpiredTokens(): Promise<void> {
       new Date(Date.now() + 60 * 60 * 1000)
     );
 
-    // Get all organizations
-    const orgsSnapshot = await db.organizations().get();
+    // Single collectionGroup query instead of N+1 per-org queries
+    const accountsSnapshot = await db
+      .socialAccountsGroup()
+      .where("tokenExpiresAt", "<=", oneHourFromNow)
+      .where("tokenExpiresAt", ">", now)
+      .get();
 
-    for (const orgDoc of orgsSnapshot.docs) {
-      // Get accounts with tokens expiring soon
-      const accountsSnapshot = await db
-        .socialAccounts(orgDoc.id)
-        .where("tokenExpiresAt", "<=", oneHourFromNow)
-        .where("tokenExpiresAt", ">", now)
-        .get();
+    for (const accountDoc of accountsSnapshot.docs) {
+      try {
+        const account = accountDoc.data() as SocialAccount;
 
-      for (const accountDoc of accountsSnapshot.docs) {
-        try {
-          const account = accountDoc.data() as SocialAccount;
-
-          if (account.platform === "tiktok" && account.refreshToken) {
-            const result = await refreshTikTokToken(account.refreshToken);
-            await accountDoc.ref.update({
-              accessToken: result.accessToken,
-              refreshToken: result.refreshToken,
-              tokenExpiresAt: Timestamp.fromDate(
-                new Date(Date.now() + result.expiresIn * 1000)
-              ),
-              lastSyncAt: Timestamp.now(),
-            });
-            console.log(`Refreshed TikTok token for account ${accountDoc.id}`);
-          } else if (account.platform === "instagram") {
-            const result = await refreshInstagramToken(account.accessToken);
-            await accountDoc.ref.update({
-              accessToken: result.accessToken,
-              tokenExpiresAt: Timestamp.fromDate(
-                new Date(Date.now() + result.expiresIn * 1000)
-              ),
-              lastSyncAt: Timestamp.now(),
-            });
-            console.log(`Refreshed Instagram token for account ${accountDoc.id}`);
-          } else {
-            console.warn(
-              `Cannot refresh token for account ${accountDoc.id} (${account.platform}): unsupported platform or missing refresh token`
-            );
-          }
-        } catch (error) {
-          console.error(
-            `Failed to refresh token for account ${accountDoc.id}:`,
-            error
+        if (account.platform === "tiktok" && account.refreshToken) {
+          const result = await refreshTikTokToken(account.refreshToken);
+          await accountDoc.ref.update({
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+            tokenExpiresAt: Timestamp.fromDate(
+              new Date(Date.now() + result.expiresIn * 1000)
+            ),
+            lastSyncAt: Timestamp.now(),
+          });
+          console.log(`Refreshed TikTok token for account ${accountDoc.id}`);
+        } else if (account.platform === "instagram") {
+          const result = await refreshInstagramToken(account.accessToken);
+          await accountDoc.ref.update({
+            accessToken: result.accessToken,
+            tokenExpiresAt: Timestamp.fromDate(
+              new Date(Date.now() + result.expiresIn * 1000)
+            ),
+            lastSyncAt: Timestamp.now(),
+          });
+          console.log(`Refreshed Instagram token for account ${accountDoc.id}`);
+        } else {
+          console.warn(
+            `Cannot refresh token for account ${accountDoc.id} (${account.platform}): unsupported platform or missing refresh token`
           );
         }
+      } catch (error) {
+        console.error(
+          `Failed to refresh token for account ${accountDoc.id}:`,
+          error
+        );
       }
     }
   } catch (error) {

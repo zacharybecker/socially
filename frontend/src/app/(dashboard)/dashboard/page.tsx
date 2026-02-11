@@ -1,15 +1,19 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
+import { api, endpoints } from "@/lib/api";
+import { Post, SocialAccount } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
   BarChart3,
   Calendar,
-  Eye,
-  Heart,
+  CheckCircle2,
+  Loader2,
   MessageCircle,
   Plus,
   Share2,
@@ -17,15 +21,56 @@ import {
   Users,
 } from "lucide-react";
 
+const statusColors: Record<string, string> = {
+  draft: "bg-slate-600",
+  scheduled: "bg-blue-600",
+  publishing: "bg-yellow-600",
+  published: "bg-green-600",
+  failed: "bg-red-600",
+};
+
 export default function DashboardPage() {
   const { currentOrganization } = useOrganization();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!currentOrganization) return;
+      try {
+        const [postsRes, accountsRes] = await Promise.all([
+          api.get<{ success: boolean; data: Post[] }>(
+            endpoints.posts.list(currentOrganization.id)
+          ),
+          api.get<{ success: boolean; data: SocialAccount[] }>(
+            endpoints.accounts.list(currentOrganization.id)
+          ),
+        ]);
+        setPosts(postsRes.data ?? []);
+        setAccounts(accountsRes.data ?? []);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [currentOrganization]);
+
+  const totalPosts = posts.length;
+  const published = posts.filter((p) => p.status === "published").length;
+  const scheduled = posts.filter((p) => p.status === "scheduled").length;
+  const connectedAccounts = accounts.length;
 
   const stats = [
-    { name: "Total Posts", value: "0", icon: Calendar, change: "+0%", changeType: "neutral" },
-    { name: "Total Views", value: "0", icon: Eye, change: "+0%", changeType: "neutral" },
-    { name: "Engagement", value: "0%", icon: Heart, change: "+0%", changeType: "neutral" },
-    { name: "Followers", value: "0", icon: Users, change: "+0%", changeType: "neutral" },
+    { name: "Total Posts", value: totalPosts.toString(), icon: Calendar },
+    { name: "Published", value: published.toString(), icon: CheckCircle2 },
+    { name: "Scheduled", value: scheduled.toString(), icon: Calendar },
+    { name: "Accounts", value: connectedAccounts.toString(), icon: Users },
   ];
+
+  const recentPosts = posts.slice(0, 5);
 
   return (
     <>
@@ -52,35 +97,27 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <Card key={stat.name} className="bg-slate-800/50 border-slate-700">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-slate-400">
-                  {stat.name}
-                </CardTitle>
-                <stat.icon className="h-4 w-4 text-slate-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <p className="text-xs text-slate-400">
-                  <span
-                    className={
-                      stat.changeType === "positive"
-                        ? "text-green-500"
-                        : stat.changeType === "negative"
-                        ? "text-red-500"
-                        : "text-slate-500"
-                    }
-                  >
-                    {stat.change}
-                  </span>{" "}
-                  from last month
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat) => (
+              <Card key={stat.name} className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-400">
+                    {stat.name}
+                  </CardTitle>
+                  <stat.icon className="h-4 w-4 text-slate-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Content Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -93,13 +130,40 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Calendar className="h-12 w-12 text-slate-600 mb-4" />
-                <p className="text-sm text-slate-400 mb-4">No posts yet</p>
-                <Button asChild size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                  <Link href="/dashboard/posts/new">Create your first post</Link>
-                </Button>
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                </div>
+              ) : recentPosts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Calendar className="h-12 w-12 text-slate-600 mb-4" />
+                  <p className="text-sm text-slate-400 mb-4">No posts yet</p>
+                  <Button asChild size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                    <Link href="/dashboard/posts/new">Create your first post</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/50"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white truncate">
+                          {post.content || "(No content)"}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {post.platforms.length} platform{post.platforms.length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <Badge className={`${statusColors[post.status] || "bg-slate-600"} text-white text-xs`}>
+                        {post.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -112,13 +176,36 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Users className="h-12 w-12 text-slate-600 mb-4" />
-                <p className="text-sm text-slate-400 mb-4">No accounts connected</p>
-                <Button asChild size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                  <Link href="/dashboard/accounts">Connect an account</Link>
-                </Button>
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                </div>
+              ) : accounts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Users className="h-12 w-12 text-slate-600 mb-4" />
+                  <p className="text-sm text-slate-400 mb-4">No accounts connected</p>
+                  <Button asChild size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                    <Link href="/dashboard/accounts">Connect an account</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {accounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/50"
+                    >
+                      <div className="h-8 w-8 rounded-full bg-slate-600 flex items-center justify-center text-sm font-bold text-white">
+                        {account.platform === "tiktok" ? "T" : "I"}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-white">@{account.username}</p>
+                        <p className="text-xs text-slate-400 capitalize">{account.platform}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

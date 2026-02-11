@@ -23,33 +23,25 @@ export async function accountRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { orgId } = request.params;
 
-      try {
-        const accountsSnapshot = await db.socialAccounts(orgId).get();
+      const accountsSnapshot = await db.socialAccounts(orgId).get();
 
-        const accounts: SocialAccountResponse[] = accountsSnapshot.docs.map((doc) => {
-          const data = doc.data() as SocialAccount;
-          return {
-            id: doc.id,
-            platform: data.platform,
-            platformUserId: data.platformUserId,
-            username: data.username,
-            profileImage: data.profileImage,
-            connectedAt: data.connectedAt.toDate(),
-            lastSyncAt: data.lastSyncAt?.toDate() || null,
-          };
-        });
+      const accounts: SocialAccountResponse[] = accountsSnapshot.docs.map((doc) => {
+        const data = doc.data() as SocialAccount;
+        return {
+          id: doc.id,
+          platform: data.platform,
+          platformUserId: data.platformUserId,
+          username: data.username,
+          profileImage: data.profileImage,
+          connectedAt: data.connectedAt.toDate(),
+          lastSyncAt: data.lastSyncAt?.toDate() || null,
+        };
+      });
 
-        return reply.send({
-          success: true,
-          data: accounts,
-        });
-      } catch (error) {
-        request.log.error(error, "Error listing accounts");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to list accounts",
-        });
-      }
+      return reply.send({
+        success: true,
+        data: accounts,
+      });
     }
   );
 
@@ -62,37 +54,26 @@ export async function accountRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { orgId, platform } = request.params;
 
-      try {
-        let authUrl: string;
-        const state = Buffer.from(
-          JSON.stringify({ orgId, userId: request.user!.uid })
-        ).toString("base64");
+      let authUrl: string;
+      const state = Buffer.from(
+        JSON.stringify({ orgId, userId: request.user!.uid })
+      ).toString("base64");
 
-        switch (platform) {
-          case "tiktok":
-            authUrl = getTikTokAuthUrl(state);
-            break;
-          case "instagram":
-            authUrl = getInstagramAuthUrl(state);
-            break;
-          default:
-            throw createError(`Platform ${platform} is not supported yet`, 400);
-        }
-
-        return reply.send({
-          success: true,
-          data: { authUrl },
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error generating auth URL");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to generate authorization URL",
-        });
+      switch (platform) {
+        case "tiktok":
+          authUrl = getTikTokAuthUrl(state);
+          break;
+        case "instagram":
+          authUrl = getInstagramAuthUrl(state);
+          break;
+        default:
+          throw createError(`Platform ${platform} is not supported yet`, 400);
       }
+
+      return reply.send({
+        success: true,
+        data: { authUrl },
+      });
     }
   );
 
@@ -142,6 +123,8 @@ export async function accountRoutes(fastify: FastifyInstance) {
             connectedAt: Timestamp.now(),
           });
 
+          request.log.info({ audit: true, event: "account_connected", orgId, platform, accountId: docId }, "Social account reconnected");
+
           // Redirect to frontend with success
           return reply.redirect(
             `${process.env.FRONTEND_URL}/dashboard/accounts?connected=${platform}`
@@ -161,7 +144,9 @@ export async function accountRoutes(fastify: FastifyInstance) {
           lastSyncAt: null,
         };
 
-        await db.socialAccounts(orgId).add(fullAccountData);
+        const newAccountRef = await db.socialAccounts(orgId).add(fullAccountData);
+
+        request.log.info({ audit: true, event: "account_connected", orgId, platform, accountId: newAccountRef.id }, "Social account connected");
 
         // Redirect to frontend with success
         return reply.redirect(
@@ -185,29 +170,20 @@ export async function accountRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { orgId, accountId } = request.params;
 
-      try {
-        const accountDoc = await db.socialAccount(orgId, accountId).get();
+      const accountDoc = await db.socialAccount(orgId, accountId).get();
 
-        if (!accountDoc.exists) {
-          throw createError("Account not found", 404);
-        }
-
-        await db.socialAccount(orgId, accountId).delete();
-
-        return reply.send({
-          success: true,
-          message: "Account disconnected successfully",
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error disconnecting account");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to disconnect account",
-        });
+      if (!accountDoc.exists) {
+        throw createError("Account not found", 404);
       }
+
+      await db.socialAccount(orgId, accountId).delete();
+
+      request.log.info({ audit: true, event: "account_disconnected", orgId, accountId }, "Social account disconnected");
+
+      return reply.send({
+        success: true,
+        message: "Account disconnected successfully",
+      });
     }
   );
 
@@ -220,63 +196,52 @@ export async function accountRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { orgId, accountId } = request.params;
 
-      try {
-        const accountDoc = await db.socialAccount(orgId, accountId).get();
+      const accountDoc = await db.socialAccount(orgId, accountId).get();
 
-        if (!accountDoc.exists) {
-          throw createError("Account not found", 404);
-        }
-
-        const accountData = accountDoc.data() as SocialAccount;
-
-        const updateData: Record<string, unknown> = {
-          lastSyncAt: Timestamp.now(),
-        };
-
-        if (accountData.platform === "tiktok" && accountData.refreshToken) {
-          const result = await refreshTikTokToken(accountData.refreshToken);
-          updateData.accessToken = result.accessToken;
-          updateData.refreshToken = result.refreshToken;
-          updateData.tokenExpiresAt = Timestamp.fromDate(
-            new Date(Date.now() + result.expiresIn * 1000)
-          );
-        } else if (accountData.platform === "instagram") {
-          const result = await refreshInstagramToken(accountData.accessToken);
-          updateData.accessToken = result.accessToken;
-          updateData.tokenExpiresAt = Timestamp.fromDate(
-            new Date(Date.now() + result.expiresIn * 1000)
-          );
-        } else {
-          throw createError(
-            `Token refresh is not supported for ${accountData.platform}`,
-            400
-          );
-        }
-
-        await db.socialAccount(orgId, accountId).update(updateData);
-
-        return reply.send({
-          success: true,
-          data: {
-            id: accountId,
-            platform: accountData.platform,
-            platformUserId: accountData.platformUserId,
-            username: accountData.username,
-            profileImage: accountData.profileImage,
-            connectedAt: accountData.connectedAt.toDate(),
-            lastSyncAt: new Date(),
-          },
-        });
-      } catch (error) {
-        if ((error as { statusCode?: number }).statusCode) {
-          throw error;
-        }
-        request.log.error(error, "Error refreshing account");
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to refresh account",
-        });
+      if (!accountDoc.exists) {
+        throw createError("Account not found", 404);
       }
+
+      const accountData = accountDoc.data() as SocialAccount;
+
+      const updateData: Record<string, unknown> = {
+        lastSyncAt: Timestamp.now(),
+      };
+
+      if (accountData.platform === "tiktok" && accountData.refreshToken) {
+        const result = await refreshTikTokToken(accountData.refreshToken);
+        updateData.accessToken = result.accessToken;
+        updateData.refreshToken = result.refreshToken;
+        updateData.tokenExpiresAt = Timestamp.fromDate(
+          new Date(Date.now() + result.expiresIn * 1000)
+        );
+      } else if (accountData.platform === "instagram") {
+        const result = await refreshInstagramToken(accountData.accessToken);
+        updateData.accessToken = result.accessToken;
+        updateData.tokenExpiresAt = Timestamp.fromDate(
+          new Date(Date.now() + result.expiresIn * 1000)
+        );
+      } else {
+        throw createError(
+          `Token refresh is not supported for ${accountData.platform}`,
+          400
+        );
+      }
+
+      await db.socialAccount(orgId, accountId).update(updateData);
+
+      return reply.send({
+        success: true,
+        data: {
+          id: accountId,
+          platform: accountData.platform,
+          platformUserId: accountData.platformUserId,
+          username: accountData.username,
+          profileImage: accountData.profileImage,
+          connectedAt: accountData.connectedAt.toDate(),
+          lastSyncAt: new Date(),
+        },
+      });
     }
   );
 }

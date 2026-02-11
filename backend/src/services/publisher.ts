@@ -19,10 +19,18 @@ export async function publishPost(
   let allSucceeded = true;
   let anySucceeded = false;
 
-  for (const platform of post.platforms) {
-    const accountDoc = await db.socialAccount(orgId, platform.accountId).get();
+  // Batch-fetch all accounts upfront to avoid N+1
+  const accountDocs = await Promise.all(
+    post.platforms.map((p) => db.socialAccount(orgId, p.accountId).get())
+  );
+  const accountMap = new Map(
+    accountDocs.map((doc) => [doc.id, doc])
+  );
 
-    if (!accountDoc.exists) {
+  for (const platform of post.platforms) {
+    const accountDoc = accountMap.get(platform.accountId);
+
+    if (!accountDoc || !accountDoc.exists) {
       updatedPlatforms.push({
         ...platform,
         status: "failed",
