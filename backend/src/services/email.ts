@@ -1,6 +1,12 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+if (!process.env.RESEND_API_KEY) {
+  console.warn("RESEND_API_KEY not set — email features will be unavailable");
+}
+
+const resend: Resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : (null as unknown as Resend);
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "noreply@socially.app";
 
 export async function sendInvitationEmail(
