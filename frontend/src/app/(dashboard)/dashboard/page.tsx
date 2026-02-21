@@ -5,6 +5,7 @@ import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
 import { api, endpoints } from "@/lib/api";
 import { Post, SocialAccount } from "@/types";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -200,9 +201,7 @@ export default function DashboardPage() {
                       key={account.id}
                       className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/50"
                     >
-                      <div className="h-8 w-8 rounded-full bg-slate-600 flex items-center justify-center text-sm font-bold text-white">
-                        {account.platform === "tiktok" ? "T" : "I"}
-                      </div>
+                      <PlatformIcon platform={account.platform} size={32} className="rounded-full" />
                       <div className="flex-1">
                         <p className="text-sm text-white">@{account.username}</p>
                         <p className="text-xs text-slate-400 capitalize">{account.platform}</p>

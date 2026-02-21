@@ -20,16 +20,17 @@ import { Plus, RefreshCw, Trash2, ExternalLink, Loader2 } from "lucide-react";
 import { SocialAccount, Platform } from "@/types";
 import { toast } from "sonner";
 import { api, endpoints } from "@/lib/api";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 
-const platformConfig: Record<Platform, { name: string; color: string; icon: string }> = {
-  tiktok: { name: "TikTok", color: "bg-black", icon: "T" },
-  instagram: { name: "Instagram", color: "bg-gradient-to-br from-purple-600 to-pink-500", icon: "I" },
-  youtube: { name: "YouTube", color: "bg-red-600", icon: "Y" },
-  twitter: { name: "X (Twitter)", color: "bg-black", icon: "X" },
-  facebook: { name: "Facebook", color: "bg-blue-600", icon: "F" },
-  linkedin: { name: "LinkedIn", color: "bg-blue-700", icon: "L" },
-  threads: { name: "Threads", color: "bg-black", icon: "T" },
-  pinterest: { name: "Pinterest", color: "bg-red-700", icon: "P" },
+const platformConfig: Record<Platform, { name: string }> = {
+  tiktok: { name: "TikTok" },
+  instagram: { name: "Instagram" },
+  youtube: { name: "YouTube" },
+  twitter: { name: "X (Twitter)" },
+  facebook: { name: "Facebook" },
+  linkedin: { name: "LinkedIn" },
+  threads: { name: "Threads" },
+  pinterest: { name: "Pinterest" },
 };
 
 export default function AccountsPage() {
@@ -158,9 +159,7 @@ export default function AccountsPage() {
                       onClick={() => handleConnect(platform)}
                       disabled={connecting !== null}
                     >
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${config.color} text-white font-bold`}>
-                        {config.icon}
-                      </div>
+                      <PlatformIcon platform={platform} size={32} />
                       <span className="flex-1 text-left">{config.name}</span>
                       {connecting === platform ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -210,12 +209,21 @@ export default function AccountsPage() {
               return (
                 <Card key={account.id} className="bg-slate-800/50 border-slate-700">
                   <CardHeader className="flex flex-row items-center gap-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={account.profileImage || undefined} />
-                      <AvatarFallback className={`${config.color} text-white font-bold`}>
-                        {config.icon}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative h-12 w-12">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={account.profileImage || undefined} />
+                        <AvatarFallback className="bg-transparent">
+                          <PlatformIcon platform={account.platform} size={48} className="rounded-full" />
+                        </AvatarFallback>
+                      </Avatar>
+                      {account.profileImage && (
+                        <PlatformIcon
+                          platform={account.platform}
+                          size={18}
+                          className="absolute -bottom-0.5 -right-0.5 rounded-md ring-2 ring-slate-800"
+                        />
+                      )}
+                    </div>
                     <div className="flex-1">
                       <CardTitle className="text-base text-white">
                         @{account.username}
