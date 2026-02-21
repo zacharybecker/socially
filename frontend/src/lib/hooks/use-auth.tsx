@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import {
   User as FirebaseUser,
   signInWithEmailAndPassword,
@@ -13,12 +13,14 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { auth } from "../firebase";
+import { api, endpoints } from "../api";
 import { User } from "@/types";
 
 interface AuthContextType {
   user: FirebaseUser | null;
   userProfile: User | null;
   loading: boolean;
+  refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -34,29 +36,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser) => {
+    try {
+      const response = await api.get<{ success: boolean; data: User }>(
+        endpoints.auth.me
+      );
+      setUserProfile({
+        ...response.data,
+        // Ensure display name / photo from Firebase are used as fallback
+        displayName: response.data.displayName || firebaseUser.displayName,
+        photoURL: response.data.photoURL || firebaseUser.photoURL,
+      });
+    } catch {
+      // Fallback to basic profile if backend is unreachable
+      setUserProfile({
+        id: firebaseUser.uid,
+        email: firebaseUser.email || "",
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+        planTier: "free",
+        createdAt: new Date(firebaseUser.metadata.creationTime || Date.now()),
+      });
+    }
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      await fetchUserProfile(user);
+    }
+  }, [user, fetchUserProfile]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
-        // Fetch user profile from backend or create default
-        setUserProfile({
-          id: firebaseUser.uid,
-          email: firebaseUser.email || "",
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          planTier: "free",
-          createdAt: new Date(firebaseUser.metadata.creationTime || Date.now()),
-        });
+        await fetchUserProfile(firebaseUser);
       } else {
         setUserProfile(null);
       }
-      
+
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [fetchUserProfile]);
 
   const signIn = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
@@ -94,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         userProfile,
         loading,
+        refreshProfile,
         signIn,
         signUp,
         signInWithGoogle,

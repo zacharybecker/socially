@@ -29,6 +29,7 @@ const platformConfig: Record<Platform, { name: string; color: string; icon: stri
   facebook: { name: "Facebook", color: "bg-blue-600", icon: "F" },
   linkedin: { name: "LinkedIn", color: "bg-blue-700", icon: "L" },
   threads: { name: "Threads", color: "bg-black", icon: "T" },
+  pinterest: { name: "Pinterest", color: "bg-red-700", icon: "P" },
 };
 
 export default function AccountsPage() {
@@ -124,7 +125,7 @@ export default function AccountsPage() {
     }
   };
 
-  const availablePlatforms: Platform[] = ["tiktok", "instagram"];
+  const availablePlatforms: Platform[] = ["tiktok", "instagram", "youtube", "twitter", "facebook", "linkedin", "threads", "pinterest"];
 
   return (
     <>
@@ -171,7 +172,7 @@ export default function AccountsPage() {
                 })}
               </div>
               <p className="text-xs text-slate-500 text-center">
-                More platforms coming soon: YouTube, Twitter, Facebook, LinkedIn, Threads
+                You&apos;ll be redirected to authorize access on the selected platform.
               </p>
             </DialogContent>
           </Dialog>

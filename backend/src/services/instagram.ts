@@ -171,3 +171,83 @@ export async function publishToInstagram(
     mediaId: publishResponse.data.id,
   };
 }
+
+export async function getInstagramInsights(
+  accessToken: string,
+  mediaId: string
+): Promise<{
+  impressions: number;
+  reach: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  videoViews: number;
+  engagements: number;
+}> {
+  const response = await axios.get(`${FACEBOOK_GRAPH_URL}/${mediaId}/insights`, {
+    params: {
+      metric: "impressions,reach,likes,comments,shares,saved,video_views,total_interactions",
+      access_token: accessToken,
+    },
+  });
+
+  const metricsMap: Record<string, number> = {};
+  for (const entry of response.data?.data || []) {
+    metricsMap[entry.name] = entry.values?.[0]?.value || 0;
+  }
+
+  return {
+    impressions: metricsMap.impressions || 0,
+    reach: metricsMap.reach || 0,
+    likes: metricsMap.likes || 0,
+    comments: metricsMap.comments || 0,
+    shares: metricsMap.shares || 0,
+    saves: metricsMap.saved || 0,
+    videoViews: metricsMap.video_views || 0,
+    engagements: metricsMap.total_interactions || 0,
+  };
+}
+
+export async function getInstagramAccountInsights(
+  accessToken: string,
+  igUserId: string,
+  period: "day" | "week" | "days_28" = "day"
+): Promise<{
+  impressions: number;
+  reach: number;
+  followerCount: number;
+  profileViews: number;
+}> {
+  // Get account-level insights
+  const insightsResponse = await axios.get(
+    `${FACEBOOK_GRAPH_URL}/${igUserId}/insights`,
+    {
+      params: {
+        metric: "impressions,reach,profile_views",
+        period,
+        access_token: accessToken,
+      },
+    }
+  );
+
+  const metricsMap: Record<string, number> = {};
+  for (const entry of insightsResponse.data?.data || []) {
+    metricsMap[entry.name] = entry.values?.[0]?.value || 0;
+  }
+
+  // Get follower count from user endpoint
+  const userResponse = await axios.get(`${FACEBOOK_GRAPH_URL}/${igUserId}`, {
+    params: {
+      fields: "followers_count",
+      access_token: accessToken,
+    },
+  });
+
+  return {
+    impressions: metricsMap.impressions || 0,
+    reach: metricsMap.reach || 0,
+    followerCount: userResponse.data?.followers_count || 0,
+    profileViews: metricsMap.profile_views || 0,
+  };
+}

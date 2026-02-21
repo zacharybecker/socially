@@ -178,3 +178,70 @@ export async function publishToTikTok(
     videoId: publishId,
   };
 }
+
+export async function getTikTokVideoMetrics(
+  accessToken: string,
+  videoId: string
+): Promise<{
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+}> {
+  const response = await axios.post(
+    "https://open.tiktokapis.com/v2/video/query/",
+    {
+      filters: { video_ids: [videoId] },
+      fields: ["like_count", "comment_count", "share_count", "view_count"],
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const video = response.data?.data?.videos?.[0];
+  if (!video) {
+    return { views: 0, likes: 0, comments: 0, shares: 0 };
+  }
+
+  return {
+    views: video.view_count || 0,
+    likes: video.like_count || 0,
+    comments: video.comment_count || 0,
+    shares: video.share_count || 0,
+  };
+}
+
+export async function getTikTokUserMetrics(
+  accessToken: string,
+  openId: string
+): Promise<{
+  followerCount: number;
+  followingCount: number;
+  likesCount: number;
+  videoCount: number;
+}> {
+  const response = await axios.get(TIKTOK_USER_INFO_URL, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    params: {
+      fields: "open_id,follower_count,following_count,likes_count,video_count",
+    },
+  });
+
+  const user = response.data?.data?.user;
+  if (!user) {
+    return { followerCount: 0, followingCount: 0, likesCount: 0, videoCount: 0 };
+  }
+
+  return {
+    followerCount: user.follower_count || 0,
+    followingCount: user.following_count || 0,
+    likesCount: user.likes_count || 0,
+    videoCount: user.video_count || 0,
+  };
+}

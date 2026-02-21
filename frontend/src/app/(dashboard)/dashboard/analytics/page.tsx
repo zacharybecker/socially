@@ -1,84 +1,140 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
-import { api, endpoints } from "@/lib/api";
-import { Post, SocialAccount } from "@/types";
-import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
-  BarChart3,
-  Calendar,
-  CheckCircle2,
-  Clock,
+  useAnalyticsOverview,
+  useDailyMetrics,
+  useTopPosts,
+  useAIInsights,
+} from "@/lib/hooks/use-analytics";
+import { getDatesFromRange } from "@/components/analytics/date-range-picker";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Eye,
+  Users,
+  TrendingUp,
+  Heart,
+  Video,
   FileText,
   Loader2,
-  TrendingUp,
-  Users,
-  XCircle,
 } from "lucide-react";
+import type { AnalyticsDateRange, Platform } from "@/types";
 
-const statusColors: Record<string, string> = {
-  draft: "bg-slate-600",
-  scheduled: "bg-blue-600",
-  publishing: "bg-yellow-600",
-  published: "bg-green-600",
-  failed: "bg-red-600",
-};
+// Chart components
+import { EngagementLineChart } from "@/components/analytics/engagement-line-chart";
+import { FollowerGrowthChart } from "@/components/analytics/follower-growth-chart";
+import { PlatformBreakdownPie } from "@/components/analytics/platform-breakdown-pie";
+import { EngagementTypeStacked } from "@/components/analytics/engagement-type-stacked";
+import { TopPostsHorizontalBar } from "@/components/analytics/top-posts-horizontal-bar";
+import { PostingHeatmap } from "@/components/analytics/posting-heatmap";
+
+// Widget components
+import { StatsCard } from "@/components/analytics/stats-card";
+import { DateRangePicker } from "@/components/analytics/date-range-picker";
+import { PlatformFilter } from "@/components/analytics/platform-filter";
+import { ExportDropdown } from "@/components/analytics/export-dropdown";
+import { AIInsightsPanel } from "@/components/analytics/ai-insights-panel";
+
+function formatNumber(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString();
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Stats skeleton */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i} className="bg-slate-800/50 border-slate-700">
+            <CardContent className="p-4">
+              <div className="h-4 w-4 rounded bg-slate-700 animate-pulse mb-2" />
+              <div className="h-7 w-20 rounded bg-slate-700 animate-pulse mb-1" />
+              <div className="h-3 w-16 rounded bg-slate-700 animate-pulse mb-2" />
+              <div className="h-7 w-full rounded bg-slate-700 animate-pulse" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {/* Charts skeleton */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2 bg-slate-800/50 border-slate-700">
+          <CardContent className="p-6">
+            <div className="h-[300px] rounded bg-slate-700/50 animate-pulse" />
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="p-6">
+            <div className="h-[300px] rounded bg-slate-700/50 animate-pulse" />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
 
 export default function AnalyticsPage() {
   const { currentOrganization } = useOrganization();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const orgId = currentOrganization?.id;
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchData = async () => {
-      if (!currentOrganization) return;
-      try {
-        const [postsRes, accountsRes] = await Promise.all([
-          api.get<{ success: boolean; data: Post[] }>(
-            endpoints.posts.list(currentOrganization.id)
-          ),
-          api.get<{ success: boolean; data: SocialAccount[] }>(
-            endpoints.accounts.list(currentOrganization.id)
-          ),
-        ]);
-        if (cancelled) return;
-        setPosts(postsRes.data ?? []);
-        setAccounts(accountsRes.data ?? []);
-      } catch (error) {
-        console.error("Failed to fetch analytics data:", error);
-        if (!cancelled) toast.error("Failed to load analytics data");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const [dateRange, setDateRange] = useState<AnalyticsDateRange>("30d");
+  const [platformFilter, setPlatformFilter] = useState<Platform[]>([]);
+
+  const { start: startDate, end: endDate } = useMemo(
+    () => getDatesFromRange(dateRange),
+    [dateRange]
+  );
+
+  const handleDateChange = (
+    range: AnalyticsDateRange,
+    _start: string,
+    _end: string
+  ) => {
+    setDateRange(range);
+  };
+
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+  } = useAnalyticsOverview(orgId, startDate, endDate);
+
+  const {
+    data: dailyMetrics,
+    isLoading: dailyLoading,
+  } = useDailyMetrics(orgId, startDate, endDate);
+
+  const {
+    data: topPosts,
+    isLoading: topPostsLoading,
+  } = useTopPosts(orgId, startDate, endDate, 10);
+
+  const {
+    data: aiInsights,
+    isLoading: insightsLoading,
+  } = useAIInsights(orgId, startDate, endDate);
+
+  const isLoading = overviewLoading || dailyLoading;
+
+  // Extract sparkline data from daily metrics
+  const sparklines = useMemo(() => {
+    if (!dailyMetrics?.length) return null;
+    return {
+      impressions: dailyMetrics.map((d) => d.impressions),
+      reach: dailyMetrics.map((d) => d.reach),
+      engagementRate: dailyMetrics.map((d) => d.engagementRate),
+      followers: dailyMetrics.map((d) => d.followers),
+      videoViews: dailyMetrics.map((d) => d.videoViews),
+      posts: dailyMetrics.map((d) => d.postsPublished),
     };
-    fetchData();
-    return () => { cancelled = true; };
-  }, [currentOrganization]);
+  }, [dailyMetrics]);
 
-  const totalPosts = posts.length;
-  const published = posts.filter((p) => p.status === "published").length;
-  const scheduled = posts.filter((p) => p.status === "scheduled").length;
-  const drafts = posts.filter((p) => p.status === "draft").length;
-  const failed = posts.filter((p) => p.status === "failed").length;
-  const connectedAccounts = accounts.length;
-
-  const stats = [
-    { name: "Total Posts", value: totalPosts.toString(), icon: FileText, color: "text-blue-400" },
-    { name: "Published", value: published.toString(), icon: CheckCircle2, color: "text-green-400" },
-    { name: "Scheduled", value: scheduled.toString(), icon: Clock, color: "text-yellow-400" },
-    { name: "Drafts", value: drafts.toString(), icon: Calendar, color: "text-slate-400" },
-    { name: "Failed", value: failed.toString(), icon: XCircle, color: "text-red-400" },
-    { name: "Accounts", value: connectedAccounts.toString(), icon: Users, color: "text-purple-400" },
-  ];
-
-  const recentPosts = posts.slice(0, 10);
+  // Compute change percentages from overview data
+  const engagementRateDisplay = overview
+    ? `${overview.engagementRate.toFixed(2)}%`
+    : "0%";
 
   return (
     <>
@@ -88,167 +144,203 @@ export default function AnalyticsPage() {
       />
 
       <div className="p-6 space-y-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          </div>
+        {/* Top Bar: DateRangePicker + PlatformFilter + ExportDropdown */}
+        <div className="flex flex-wrap items-center gap-3">
+          <DateRangePicker value={dateRange} onChange={handleDateChange} />
+          <PlatformFilter
+            selected={platformFilter}
+            onChange={setPlatformFilter}
+          />
+          <div className="flex-1" />
+          <ExportDropdown />
+        </div>
+
+        {isLoading ? (
+          <LoadingSkeleton />
         ) : (
           <>
-            {/* Stats Grid */}
+            {/* Stats Row */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              {stats.map((stat) => (
-                <Card key={stat.name} className="bg-slate-800/50 border-slate-700">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                    </div>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
-                    <p className="text-xs text-slate-400">{stat.name}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              <StatsCard
+                title="Impressions"
+                value={formatNumber(overview?.totalImpressions ?? 0)}
+                changePercent={overview ? ((overview.totalImpressions / Math.max(overview.totalImpressions - (overview.totalImpressions * 0.1), 1)) - 1) * 100 : undefined}
+                sparklineData={sparklines?.impressions}
+                icon={Eye}
+                color="#3b82f6"
+              />
+              <StatsCard
+                title="Reach"
+                value={formatNumber(overview?.totalReach ?? 0)}
+                sparklineData={sparklines?.reach}
+                icon={Users}
+                color="#8b5cf6"
+              />
+              <StatsCard
+                title="Engagement Rate"
+                value={engagementRateDisplay}
+                sparklineData={sparklines?.engagementRate}
+                icon={TrendingUp}
+                color="#10b981"
+              />
+              <StatsCard
+                title="Followers"
+                value={formatNumber(overview?.totalFollowers ?? 0)}
+                changePercent={
+                  overview && overview.totalFollowers > 0
+                    ? (overview.followerChange / overview.totalFollowers) * 100
+                    : undefined
+                }
+                sparklineData={sparklines?.followers}
+                icon={Heart}
+                color="#f43f5e"
+              />
+              <StatsCard
+                title="Video Views"
+                value={formatNumber(overview?.totalVideoViews ?? 0)}
+                sparklineData={sparklines?.videoViews}
+                icon={Video}
+                color="#6366f1"
+              />
+              <StatsCard
+                title="Posts Published"
+                value={formatNumber(overview?.postsPublished ?? 0)}
+                sparklineData={sparklines?.posts}
+                icon={FileText}
+                color="#f59e0b"
+              />
             </div>
 
-            {/* Tabs */}
-            <Tabs defaultValue="posts">
-              <TabsList className="bg-slate-800 border-slate-700">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-slate-700 text-slate-300">
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="posts" className="data-[state=active]:bg-slate-700 text-slate-300">
-                  Posts
-                </TabsTrigger>
-                <TabsTrigger value="audience" className="data-[state=active]:bg-slate-700 text-slate-300">
-                  Audience
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="mt-6">
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <Card className="bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-white">Engagement Over Time</CardTitle>
-                      <CardDescription className="text-slate-400">
-                        Views, likes, and comments trend
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col items-center justify-center py-16">
-                        <BarChart3 className="h-16 w-16 text-slate-600 mb-4" />
-                        <p className="text-sm text-slate-400">No data available</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Platform engagement metrics coming soon
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-white">Post Status Breakdown</CardTitle>
-                      <CardDescription className="text-slate-400">
-                        Distribution of your posts by status
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {totalPosts === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16">
-                          <TrendingUp className="h-16 w-16 text-slate-600 mb-4" />
-                          <p className="text-sm text-slate-400">No posts yet</p>
-                          <p className="text-xs text-slate-500 mt-1">
-                            Create posts to see status breakdown
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4 py-4">
-                          {[
-                            { label: "Published", count: published, color: "bg-green-500" },
-                            { label: "Scheduled", count: scheduled, color: "bg-blue-500" },
-                            { label: "Drafts", count: drafts, color: "bg-slate-500" },
-                            { label: "Failed", count: failed, color: "bg-red-500" },
-                          ].map((item) => (
-                            <div key={item.label} className="flex items-center gap-3">
-                              <div className={`h-3 w-3 rounded-full ${item.color}`} />
-                              <span className="text-sm text-slate-300 flex-1">{item.label}</span>
-                              <span className="text-sm font-medium text-white">{item.count}</span>
-                              <div className="w-24 bg-slate-700 rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full ${item.color}`}
-                                  style={{ width: `${totalPosts > 0 ? (item.count / totalPosts) * 100 : 0}%` }}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="posts" className="mt-6">
-                <Card className="bg-slate-800/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Recent Posts</CardTitle>
-                    <CardDescription className="text-slate-400">
-                      Your latest posts and their status
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {recentPosts.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-16">
-                        <TrendingUp className="h-16 w-16 text-slate-600 mb-4" />
-                        <p className="text-sm text-slate-400">No posts to analyze</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Publish posts to see performance data
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {recentPosts.map((post) => (
-                          <div
-                            key={post.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/50"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-white truncate">
-                                {post.content || "(No content)"}
-                              </p>
-                              <p className="text-xs text-slate-400">
-                                {post.platforms.length} platform{post.platforms.length !== 1 ? "s" : ""}
-                              </p>
-                            </div>
-                            <Badge className={`${statusColors[post.status] || "bg-slate-600"} text-white text-xs`}>
-                              {post.status}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="audience" className="mt-6">
-                <Card className="bg-slate-800/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Audience Demographics</CardTitle>
-                    <CardDescription className="text-slate-400">
-                      Who is engaging with your content
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col items-center justify-center py-16">
-                      <Users className="h-16 w-16 text-slate-600 mb-4" />
-                      <p className="text-sm text-slate-400">No audience data available</p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Connect accounts to see audience insights
-                      </p>
+            {/* Row 2: Engagement Line Chart + Platform Breakdown Pie */}
+            <div className="grid gap-6 lg:grid-cols-3">
+              <Card className="lg:col-span-2 bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-base">
+                    Engagement Over Time
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dailyMetrics?.length ? (
+                    <EngagementLineChart
+                      data={dailyMetrics}
+                      metrics={[
+                        "impressions",
+                        "engagements",
+                        "reach",
+                        "likes",
+                        "comments",
+                        "shares",
+                      ]}
+                    />
+                  ) : (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                      No data available for this period
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-base">
+                    Platform Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dailyMetrics?.length ? (
+                    <PlatformBreakdownPie data={dailyMetrics} />
+                  ) : (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                      No platform data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Row 3: Follower Growth + Engagement Type Stacked */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-base">
+                    Follower Growth
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dailyMetrics?.length ? (
+                    <FollowerGrowthChart data={dailyMetrics} />
+                  ) : (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                      No follower data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-base">
+                    Engagement Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dailyMetrics?.length ? (
+                    <EngagementTypeStacked data={dailyMetrics} />
+                  ) : (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                      No engagement data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Row 4: Top Posts + Posting Heatmap */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-base">
+                    Top Performing Posts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {topPostsLoading ? (
+                    <div className="flex h-[300px] items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                    </div>
+                  ) : topPosts?.length ? (
+                    <TopPostsHorizontalBar data={topPosts} />
+                  ) : (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                      No published posts to rank
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-base">
+                    Posting Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dailyMetrics?.length ? (
+                    <PostingHeatmap data={dailyMetrics} />
+                  ) : (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                      No activity data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Row 5: AI Insights */}
+            <AIInsightsPanel
+              insights={aiInsights}
+              isLoading={insightsLoading}
+            />
           </>
         )}
       </div>

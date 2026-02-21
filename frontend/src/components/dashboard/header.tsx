@@ -1,9 +1,9 @@
 "use client";
 
 import { useOrganization } from "@/lib/hooks";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { NotificationDropdown } from "./notification-dropdown";
 
 interface HeaderProps {
   title: string;
@@ -35,16 +35,7 @@ export function Header({ title, description, actions }: HeaderProps) {
           </div>
 
           {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative text-slate-400 hover:text-white hover:bg-slate-800"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-              3
-            </span>
-          </Button>
+          <NotificationDropdown />
 
           {/* Custom Actions */}
           {actions}

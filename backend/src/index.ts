@@ -15,6 +15,15 @@ import { accountRoutes } from "./routes/accounts.js";
 import { postRoutes } from "./routes/posts.js";
 import { mediaRoutes } from "./routes/media.js";
 import { aiRoutes } from "./routes/ai.js";
+import { analyticsRoutes } from "./routes/analytics.js";
+import { billingRoutes } from "./routes/billing.js";
+import { webhookRoutes } from "./routes/webhooks.js";
+import { brandVoiceRoutes } from "./routes/brand-voice.js";
+import { aiSuggestionsRoutes } from "./routes/ai-suggestions.js";
+import { exportRoutes } from "./routes/exports.js";
+import { memberRoutes } from "./routes/members.js";
+import { commentRoutes } from "./routes/comments.js";
+import { activityRoutes } from "./routes/activity.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { initializeFirebase } from "./services/firebase.js";
 import { startScheduler, stopScheduler } from "./jobs/scheduler.js";
@@ -69,6 +78,25 @@ async function main() {
     // Set error handler
     fastify.setErrorHandler(errorHandler);
 
+    // Register webhook routes with raw body parsing for Stripe signature verification.
+    // Must use a scoped content type parser so the raw buffer is preserved.
+    await fastify.register(async (scope) => {
+      scope.addContentTypeParser(
+        "application/json",
+        { parseAs: "buffer" },
+        (req, body, done) => {
+          // Store the raw buffer on the request for Stripe signature verification
+          (req as unknown as Record<string, unknown>).rawBody = body;
+          try {
+            done(null, JSON.parse(body.toString()));
+          } catch (err) {
+            done(err as Error, undefined);
+          }
+        }
+      );
+      scope.register(webhookRoutes, { prefix: "/webhooks" });
+    });
+
     // Request logging
     fastify.addHook("onResponse", (request, reply, done) => {
       request.log.info({
@@ -99,11 +127,41 @@ async function main() {
       scope.register(mediaRoutes, { prefix: "/organizations/:orgId/media" });
     });
 
+    await fastify.register(analyticsRoutes, {
+      prefix: "/organizations/:orgId/analytics",
+    });
+
     await fastify.register(async (scope) => {
       scope.addHook("onRoute", (routeOptions) => {
         routeOptions.config = { ...routeOptions.config, rateLimit: { max: 10, timeWindow: "1 minute" } };
       });
       scope.register(aiRoutes, { prefix: "/ai" });
+    });
+
+    await fastify.register(billingRoutes, { prefix: "/billing" });
+
+    await fastify.register(brandVoiceRoutes, {
+      prefix: "/organizations/:orgId/brand-voice",
+    });
+
+    await fastify.register(aiSuggestionsRoutes, {
+      prefix: "/organizations/:orgId/ai",
+    });
+
+    await fastify.register(exportRoutes, {
+      prefix: "/organizations/:orgId/exports",
+    });
+
+    await fastify.register(memberRoutes, {
+      prefix: "/organizations/:orgId/members",
+    });
+
+    await fastify.register(commentRoutes, {
+      prefix: "/organizations/:orgId/posts/:postId/comments",
+    });
+
+    await fastify.register(activityRoutes, {
+      prefix: "/organizations/:orgId/activity",
     });
 
     // Health check

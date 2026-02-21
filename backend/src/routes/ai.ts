@@ -2,7 +2,23 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { authenticate } from "../middleware/auth.js";
 import { validateBody } from "../middleware/validation.js";
-import { generateWithOpenAI } from "../services/openai.js";
+import {
+  generateWithOpenAI,
+  analyzeContent,
+  generateHashtags,
+  refineContent,
+  generateCaptionVariations,
+  generateImage,
+  generateWithBrandVoice,
+} from "../services/openai.js";
+import {
+  initiateVideoGeneration,
+  checkVideoJobStatus,
+  listVideoJobs,
+} from "../services/video-generation.js";
+import { getStorage } from "../services/firebase.js";
+import { requireQuota } from "../middleware/planGuard.js";
+import { incrementUsage } from "../services/usage.js";
 
 const generateHookSchema = z.object({
   topic: z.string().min(1, "Topic is required").max(500),
@@ -31,11 +47,47 @@ const generateScriptSchema = z.object({
   style: z.enum(["storytelling", "listicle", "tutorial", "reaction"]).default("storytelling"),
 });
 
+const generateHashtagsSchema = z.object({
+  content: z.string().min(1, "Content is required").max(2000),
+  platform: z.enum(["tiktok", "instagram"]),
+  count: z.number().int().min(1).max(30).default(10),
+});
+
+const analyzeContentSchema = z.object({
+  content: z.string().min(1, "Content is required").max(5000),
+});
+
+const refineContentSchema = z.object({
+  content: z.string().min(1, "Content is required").max(5000),
+  action: z.enum(["rewrite", "shorten", "expand", "change_tone"]),
+  tone: z.enum(["professional", "casual", "humorous", "dramatic", "inspirational"]).optional(),
+  platform: z.enum(["tiktok", "instagram", "youtube", "twitter", "facebook", "linkedin", "threads"]).optional(),
+  useBrandVoice: z.boolean().default(false),
+});
+
+const generateCaptionVariationsSchema = z.object({
+  topic: z.string().min(1, "Topic is required").max(500),
+  platform: z.enum(["tiktok", "instagram", "youtube", "twitter", "facebook", "linkedin", "threads"]),
+  count: z.number().int().min(1).max(5).default(3),
+});
+
+const generateImageSchema = z.object({
+  prompt: z.string().min(1, "Prompt is required").max(1000),
+  size: z.enum(["1024x1024", "1792x1024", "1024x1792"]).default("1024x1024"),
+  style: z.enum(["vivid", "natural"]).default("vivid"),
+  quality: z.enum(["standard", "hd"]).default("standard"),
+});
+
+const generateVideoSchema = z.object({
+  prompt: z.string().min(1, "Prompt is required").max(1000),
+  aspectRatio: z.enum(["16:9", "9:16", "1:1"]).default("16:9"),
+});
+
 export async function aiRoutes(fastify: FastifyInstance) {
   // Generate hooks
   fastify.post(
     "/generate-hook",
-    { preHandler: authenticate },
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
     async (request, reply) => {
       const { topic, niche, tone, count } = validateBody(generateHookSchema, request.body);
 
@@ -55,6 +107,8 @@ Return only the hooks, one per line, without numbering or bullet points.`;
         .filter((h) => h.length > 0)
         .slice(0, count);
 
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
       return reply.send({
         success: true,
         data: { hooks },
@@ -65,7 +119,7 @@ Return only the hooks, one per line, without numbering or bullet points.`;
   // Generate captions
   fastify.post(
     "/generate-caption",
-    { preHandler: authenticate },
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
     async (request, reply) => {
       const { topic, platform, tone, includeHashtags, maxLength } = validateBody(
         generateCaptionSchema,
@@ -90,6 +144,8 @@ Separate each caption with "---".`;
         .map((c) => c.trim())
         .filter((c) => c.length > 0);
 
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
       return reply.send({
         success: true,
         data: { captions },
@@ -100,7 +156,7 @@ Separate each caption with "---".`;
   // Generate content ideas
   fastify.post(
     "/generate-ideas",
-    { preHandler: authenticate },
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
     async (request, reply) => {
       const { niche, count, contentType } = validateBody(generateIdeasSchema, request.body);
 
@@ -121,6 +177,8 @@ Return only the ideas, one per line, without numbering.`;
         .filter((i) => i.length > 0)
         .slice(0, count);
 
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
       return reply.send({
         success: true,
         data: { ideas },
@@ -131,7 +189,7 @@ Return only the ideas, one per line, without numbering.`;
   // Generate video script
   fastify.post(
     "/generate-script",
-    { preHandler: authenticate },
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
     async (request, reply) => {
       const { topic, duration, style } = validateBody(generateScriptSchema, request.body);
 
@@ -150,9 +208,227 @@ Total duration should be approximately ${durationSeconds} seconds when spoken.`;
 
       const script = await generateWithOpenAI(prompt);
 
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
       return reply.send({
         success: true,
         data: { script: script.trim() },
+      });
+    }
+  );
+
+  // Generate hashtags
+  fastify.post(
+    "/generate-hashtags",
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
+    async (request, reply) => {
+      const { content, platform, count } = validateBody(generateHashtagsSchema, request.body);
+
+      const hashtags = await generateHashtags(content, platform, count);
+
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
+      return reply.send({
+        success: true,
+        data: { hashtags },
+      });
+    }
+  );
+
+  // Analyze content
+  fastify.post(
+    "/analyze-content",
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
+    async (request, reply) => {
+      const { content } = validateBody(analyzeContentSchema, request.body);
+
+      const analysis = await analyzeContent(content);
+
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
+      return reply.send({
+        success: true,
+        data: analysis,
+      });
+    }
+  );
+
+  // Refine content
+  fastify.post(
+    "/refine-content",
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
+    async (request, reply) => {
+      const { content, action, tone, platform, useBrandVoice } = validateBody(
+        refineContentSchema,
+        request.body
+      );
+
+      let refined: string;
+      if (useBrandVoice) {
+        // Need orgId from query for brand voice
+        const orgId = (request.query as { orgId?: string }).orgId;
+        if (!orgId) {
+          return reply.status(400).send({
+            success: false,
+            error: "orgId query parameter required when useBrandVoice is true",
+          });
+        }
+        const refinementPrompt = `${action === "change_tone" && tone ? `Change the tone to ${tone}. ` : `${action} this content. `}Content: "${content}"${platform ? ` Optimize for ${platform}.` : ""}\n\nReturn only the refined content.`;
+        refined = await generateWithBrandVoice(orgId, refinementPrompt);
+      } else {
+        refined = await refineContent(content, action, { tone, platform });
+      }
+
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
+      return reply.send({
+        success: true,
+        data: { refined },
+      });
+    }
+  );
+
+  // Generate caption variations
+  fastify.post(
+    "/generate-caption-variations",
+    { preHandler: [authenticate, requireQuota("aiCreditsUsed")] },
+    async (request, reply) => {
+      const { topic, platform, count } = validateBody(
+        generateCaptionVariationsSchema,
+        request.body
+      );
+
+      const variations = await generateCaptionVariations(topic, platform, count);
+
+      await incrementUsage(request.user!.uid, "aiCreditsUsed", 1);
+
+      return reply.send({
+        success: true,
+        data: { variations },
+      });
+    }
+  );
+
+  // Generate image
+  fastify.post(
+    "/generate-image",
+    { preHandler: [authenticate, requireQuota("imageGenerationsUsed")] },
+    async (request, reply) => {
+      const { prompt, size, style, quality } = validateBody(generateImageSchema, request.body);
+
+      // Generate image via OpenAI DALL-E
+      const tempUrl = await generateImage(prompt, { size, style, quality });
+
+      if (!tempUrl) {
+        return reply.status(500).send({
+          success: false,
+          error: "Failed to generate image",
+        });
+      }
+
+      // Download image from temp URL and upload to Firebase Storage
+      const imageResponse = await fetch(tempUrl);
+      const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+
+      const fileName = `ai-images/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
+      const bucket = getStorage().bucket();
+      const file = bucket.file(fileName);
+
+      await file.save(imageBuffer, {
+        metadata: {
+          contentType: "image/png",
+        },
+      });
+
+      await file.makePublic();
+
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+      await incrementUsage(request.user!.uid, "imageGenerationsUsed", 1);
+
+      return reply.send({
+        success: true,
+        data: { url: publicUrl },
+      });
+    }
+  );
+
+  // Generate video (initiate job)
+  fastify.post(
+    "/generate-video",
+    { preHandler: [authenticate, requireQuota("videoGenerationsUsed")] },
+    async (request, reply) => {
+      const { prompt, aspectRatio } = validateBody(generateVideoSchema, request.body);
+
+      const orgId = (request.query as { orgId?: string }).orgId;
+      if (!orgId) {
+        return reply.status(400).send({
+          success: false,
+          error: "orgId query parameter is required",
+        });
+      }
+
+      const jobId = await initiateVideoGeneration(orgId, request.user!.uid, prompt, aspectRatio);
+
+      await incrementUsage(request.user!.uid, "videoGenerationsUsed", 1);
+
+      return reply.send({
+        success: true,
+        data: { jobId, status: "processing" },
+      });
+    }
+  );
+
+  // Check video job status
+  fastify.get(
+    "/video-jobs/:jobId",
+    { preHandler: authenticate },
+    async (request, reply) => {
+      const { jobId } = request.params as { jobId: string };
+      const orgId = (request.query as { orgId?: string }).orgId;
+
+      if (!orgId) {
+        return reply.status(400).send({
+          success: false,
+          error: "orgId query parameter is required",
+        });
+      }
+
+      const job = await checkVideoJobStatus(orgId, jobId);
+
+      if (!job) {
+        return reply.status(404).send({
+          success: false,
+          error: "Video job not found",
+        });
+      }
+
+      return reply.send({
+        success: true,
+        data: job,
+      });
+    }
+  );
+
+  // List video jobs
+  fastify.get(
+    "/video-jobs",
+    { preHandler: authenticate },
+    async (request, reply) => {
+      const { orgId, limit } = request.query as { orgId?: string; limit?: string };
+
+      if (!orgId) {
+        return reply.status(400).send({
+          success: false,
+          error: "orgId query parameter is required",
+        });
+      }
+
+      const jobs = await listVideoJobs(orgId, limit ? parseInt(limit, 10) : undefined);
+
+      return reply.send({
+        success: true,
+        data: { jobs },
       });
     }
   );
