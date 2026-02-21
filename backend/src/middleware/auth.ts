@@ -71,6 +71,64 @@ export async function optionalAuth(
   }
 }
 
+export function requireRole(...roles: string[]) {
+  return async function (
+    request: FastifyRequest<{ Params: { orgId: string } }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    if (!request.user) {
+      return reply.status(401).send({
+        success: false,
+        error: "Authentication required",
+      });
+    }
+
+    const { orgId } = request.params;
+
+    try {
+      const orgDoc = await db.organization(orgId).get();
+      if (!orgDoc.exists) {
+        return reply.status(404).send({
+          success: false,
+          error: "Organization not found",
+        });
+      }
+
+      const orgData = orgDoc.data();
+
+      // Owner always has full access
+      if (orgData?.ownerId === request.user.uid) {
+        return;
+      }
+
+      // Check member role
+      const member = orgData?.members?.find(
+        (m: { userId: string; role: string }) => m.userId === request.user!.uid
+      );
+
+      if (!member) {
+        return reply.status(403).send({
+          success: false,
+          error: "You do not have access to this organization",
+        });
+      }
+
+      if (!roles.includes(member.role)) {
+        return reply.status(403).send({
+          success: false,
+          error: "Insufficient permissions",
+        });
+      }
+    } catch (error) {
+      request.log.error(error, "Error checking role permissions");
+      return reply.status(500).send({
+        success: false,
+        error: "Internal server error",
+      });
+    }
+  };
+}
+
 export async function requireOrgMembership(
   request: FastifyRequest<{ Params: { orgId: string } }>,
   reply: FastifyReply

@@ -7,6 +7,11 @@ import { Timestamp } from "firebase-admin/firestore";
 import { Post, PostPlatform, ScheduledJob } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
 import { publishPost } from "../services/publisher.js";
+import { requireQuota } from "../middleware/planGuard.js";
+import { incrementUsage } from "../services/usage.js";
+import { requireRole } from "../middleware/auth.js";
+import { logActivity } from "../services/activity-log.js";
+import { Organization, ApprovalRequest } from "../types/index.js";
 
 function serializeTimestamps(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -82,7 +87,7 @@ export async function postRoutes(fastify: FastifyInstance) {
     Params: { orgId: string };
   }>(
     "/",
-    { preHandler: [authenticate, requireOrgMembership] },
+    { preHandler: [authenticate, requireOrgMembership, requireQuota("postsCreated")] },
     async (request, reply) => {
       const { orgId } = request.params;
       const { content, mediaUrls, scheduledAt, accountIds } = validateBody(createPostSchema, request.body);
@@ -144,6 +149,8 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       await batch.commit();
+
+      await incrementUsage(request.user!.uid, "postsCreated", 1);
 
       return reply.status(201).send({
         success: true,
@@ -401,6 +408,139 @@ export async function postRoutes(fastify: FastifyInstance) {
       return reply.send({
         success: true,
         message: "Post scheduled successfully",
+      });
+    }
+  );
+
+  // Submit post for approval
+  fastify.post<{
+    Params: { orgId: string; postId: string };
+  }>(
+    "/:postId/submit-for-approval",
+    { preHandler: [authenticate, requireOrgMembership] },
+    async (request, reply) => {
+      const { orgId, postId } = request.params;
+
+      const postDoc = await db.post(orgId, postId).get();
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
+      }
+
+      const postData = postDoc.data() as Post;
+      if (postData.status === "published") {
+        throw createError("Cannot submit a published post for approval", 400);
+      }
+
+      const approvalRequest: ApprovalRequest = {
+        requestedBy: request.user!.uid,
+        requestedAt: Timestamp.now(),
+        reviewedBy: null,
+        reviewedAt: null,
+        status: "pending",
+        comment: null,
+      };
+
+      await db.post(orgId, postId).update({
+        status: "pending_approval",
+        approvalRequest,
+        updatedAt: Timestamp.now(),
+      });
+
+      await logActivity(orgId, request.user!.uid, "post_submitted_for_approval", "post", postId, "Post submitted for approval");
+
+      return reply.send({
+        success: true,
+        message: "Post submitted for approval",
+      });
+    }
+  );
+
+  // Approve post
+  fastify.post<{
+    Params: { orgId: string; postId: string };
+  }>(
+    "/:postId/approve",
+    { preHandler: [authenticate, requireOrgMembership, requireRole("admin")] },
+    async (request, reply) => {
+      const { orgId, postId } = request.params;
+      const body = request.body as { comment?: string } | undefined;
+
+      const postDoc = await db.post(orgId, postId).get();
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
+      }
+
+      const postData = postDoc.data() as Post;
+      if (postData.status !== "pending_approval") {
+        throw createError("Post is not pending approval", 400);
+      }
+
+      const approvalRequest: ApprovalRequest = {
+        ...(postData.approvalRequest || { requestedBy: "", requestedAt: Timestamp.now() }),
+        reviewedBy: request.user!.uid,
+        reviewedAt: Timestamp.now(),
+        status: "approved",
+        comment: body?.comment || null,
+      };
+
+      await db.post(orgId, postId).update({
+        status: "approved",
+        approvalRequest,
+        updatedAt: Timestamp.now(),
+      });
+
+      await logActivity(orgId, request.user!.uid, "post_approved", "post", postId, "Post approved");
+
+      return reply.send({
+        success: true,
+        message: "Post approved",
+      });
+    }
+  );
+
+  // Reject post
+  fastify.post<{
+    Params: { orgId: string; postId: string };
+  }>(
+    "/:postId/reject",
+    { preHandler: [authenticate, requireOrgMembership, requireRole("admin")] },
+    async (request, reply) => {
+      const { orgId, postId } = request.params;
+      const body = request.body as { comment?: string } | undefined;
+
+      const postDoc = await db.post(orgId, postId).get();
+      if (!postDoc.exists) {
+        throw createError("Post not found", 404);
+      }
+
+      const postData = postDoc.data() as Post;
+      if (postData.status !== "pending_approval") {
+        throw createError("Post is not pending approval", 400);
+      }
+
+      if (!body?.comment) {
+        throw createError("A comment is required when rejecting a post", 400);
+      }
+
+      const approvalRequest: ApprovalRequest = {
+        ...(postData.approvalRequest || { requestedBy: "", requestedAt: Timestamp.now() }),
+        reviewedBy: request.user!.uid,
+        reviewedAt: Timestamp.now(),
+        status: "rejected",
+        comment: body.comment,
+      };
+
+      await db.post(orgId, postId).update({
+        status: "rejected",
+        approvalRequest,
+        updatedAt: Timestamp.now(),
+      });
+
+      await logActivity(orgId, request.user!.uid, "post_rejected", "post", postId, `Post rejected: ${body.comment}`);
+
+      return reply.send({
+        success: true,
+        message: "Post rejected",
       });
     }
   );

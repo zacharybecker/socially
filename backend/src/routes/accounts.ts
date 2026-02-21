@@ -4,8 +4,9 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { authenticate, requireOrgMembership } from "../middleware/auth.js";
 import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
-import { SocialAccount, SocialAccountResponse, Platform } from "../types/index.js";
+import { SocialAccount, SocialAccountResponse, Platform, PlanTier } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
+import { getPlanLimits } from "../config/plans.js";
 
 const OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || process.env.TIKTOK_CLIENT_SECRET || "";
 
@@ -33,9 +34,16 @@ function verifyOAuthState(state: string): unknown {
 const callbackStateSchema = z.object({
   orgId: z.string().min(1),
   userId: z.string().min(1),
+  codeVerifier: z.string().optional(),
 });
 import { getTikTokAuthUrl, exchangeTikTokCode, refreshTikTokToken } from "../services/tiktok.js";
 import { getInstagramAuthUrl, exchangeInstagramCode, refreshInstagramToken } from "../services/instagram.js";
+import { getYouTubeAuthUrl, exchangeYouTubeCode, refreshYouTubeToken } from "../services/youtube.js";
+import { getTwitterAuthUrl, exchangeTwitterCode, refreshTwitterToken } from "../services/twitter.js";
+import { getFacebookAuthUrl, exchangeFacebookCode, refreshFacebookToken } from "../services/facebook.js";
+import { getLinkedInAuthUrl, exchangeLinkedInCode, refreshLinkedInToken } from "../services/linkedin.js";
+import { getThreadsAuthUrl, exchangeThreadsCode, refreshThreadsToken } from "../services/threads.js";
+import { getPinterestAuthUrl, exchangePinterestCode, refreshPinterestToken } from "../services/pinterest.js";
 
 export async function accountRoutes(fastify: FastifyInstance) {
   // List connected accounts
@@ -79,14 +87,41 @@ export async function accountRoutes(fastify: FastifyInstance) {
       const { orgId, platform } = request.params;
 
       let authUrl: string;
-      const state = signOAuthState({ orgId, userId: request.user!.uid });
+      const baseState = { orgId, userId: request.user!.uid };
 
       switch (platform) {
         case "tiktok":
-          authUrl = getTikTokAuthUrl(state);
+          authUrl = getTikTokAuthUrl(signOAuthState(baseState));
           break;
         case "instagram":
-          authUrl = getInstagramAuthUrl(state);
+          authUrl = getInstagramAuthUrl(signOAuthState(baseState));
+          break;
+        case "youtube":
+          authUrl = getYouTubeAuthUrl(signOAuthState(baseState));
+          break;
+        case "twitter": {
+          // Twitter uses PKCE — embed codeVerifier in state for retrieval in callback
+          const { authUrl: twitterUrl, codeVerifier } = getTwitterAuthUrl(
+            signOAuthState({ ...baseState, codeVerifier: "" }) // placeholder
+          );
+          // Re-sign state with codeVerifier included
+          authUrl = twitterUrl.replace(
+            /state=[^&]+/,
+            `state=${signOAuthState({ ...baseState, codeVerifier })}`
+          );
+          break;
+        }
+        case "facebook":
+          authUrl = getFacebookAuthUrl(signOAuthState(baseState));
+          break;
+        case "linkedin":
+          authUrl = getLinkedInAuthUrl(signOAuthState(baseState));
+          break;
+        case "threads":
+          authUrl = getThreadsAuthUrl(signOAuthState(baseState));
+          break;
+        case "pinterest":
+          authUrl = getPinterestAuthUrl(signOAuthState(baseState));
           break;
         default:
           throw createError(`Platform ${platform} is not supported yet`, 400);
@@ -114,7 +149,7 @@ export async function accountRoutes(fastify: FastifyInstance) {
         if (!decoded) {
           throw createError("Invalid OAuth state signature", 400);
         }
-        const { orgId, userId } = callbackStateSchema.parse(decoded);
+        const { orgId, userId, codeVerifier } = callbackStateSchema.parse(decoded);
 
         let accountData: Partial<SocialAccount>;
 
@@ -124,6 +159,27 @@ export async function accountRoutes(fastify: FastifyInstance) {
             break;
           case "instagram":
             accountData = await exchangeInstagramCode(code);
+            break;
+          case "youtube":
+            accountData = await exchangeYouTubeCode(code);
+            break;
+          case "twitter":
+            if (!codeVerifier) {
+              throw createError("Missing PKCE code verifier for Twitter", 400);
+            }
+            accountData = await exchangeTwitterCode(code, codeVerifier);
+            break;
+          case "facebook":
+            accountData = await exchangeFacebookCode(code);
+            break;
+          case "linkedin":
+            accountData = await exchangeLinkedInCode(code);
+            break;
+          case "threads":
+            accountData = await exchangeThreadsCode(code);
+            break;
+          case "pinterest":
+            accountData = await exchangePinterestCode(code);
             break;
           default:
             throw createError(`Platform ${platform} is not supported`, 400);
@@ -149,6 +205,20 @@ export async function accountRoutes(fastify: FastifyInstance) {
           return reply.redirect(
             `${process.env.FRONTEND_URL}/dashboard/accounts?connected=${platform}`
           );
+        }
+
+        // Check social accounts limit before creating new account
+        const userDoc = await db.user(userId).get();
+        const planTier = (userDoc.data()?.planTier as PlanTier) || "free";
+        const limits = getPlanLimits(planTier);
+
+        if (limits.socialAccounts !== -1) {
+          const allAccountsSnapshot = await db.socialAccounts(orgId).get();
+          if (allAccountsSnapshot.size >= limits.socialAccounts) {
+            return reply.redirect(
+              `${process.env.FRONTEND_URL}/dashboard/accounts?error=account_limit_reached`
+            );
+          }
         }
 
         // Create new account
@@ -228,24 +298,85 @@ export async function accountRoutes(fastify: FastifyInstance) {
         lastSyncAt: Timestamp.now(),
       };
 
-      if (accountData.platform === "tiktok" && accountData.refreshToken) {
-        const result = await refreshTikTokToken(accountData.refreshToken);
-        updateData.accessToken = result.accessToken;
-        updateData.refreshToken = result.refreshToken;
-        updateData.tokenExpiresAt = Timestamp.fromDate(
-          new Date(Date.now() + result.expiresIn * 1000)
-        );
-      } else if (accountData.platform === "instagram") {
-        const result = await refreshInstagramToken(accountData.accessToken);
-        updateData.accessToken = result.accessToken;
-        updateData.tokenExpiresAt = Timestamp.fromDate(
-          new Date(Date.now() + result.expiresIn * 1000)
-        );
-      } else {
-        throw createError(
-          `Token refresh is not supported for ${accountData.platform}`,
-          400
-        );
+      switch (accountData.platform) {
+        case "tiktok":
+          if (accountData.refreshToken) {
+            const tiktokResult = await refreshTikTokToken(accountData.refreshToken);
+            updateData.accessToken = tiktokResult.accessToken;
+            updateData.refreshToken = tiktokResult.refreshToken;
+            updateData.tokenExpiresAt = Timestamp.fromDate(
+              new Date(Date.now() + tiktokResult.expiresIn * 1000)
+            );
+          }
+          break;
+        case "instagram": {
+          const igResult = await refreshInstagramToken(accountData.accessToken);
+          updateData.accessToken = igResult.accessToken;
+          updateData.tokenExpiresAt = Timestamp.fromDate(
+            new Date(Date.now() + igResult.expiresIn * 1000)
+          );
+          break;
+        }
+        case "youtube":
+          if (accountData.refreshToken) {
+            const ytResult = await refreshYouTubeToken(accountData.refreshToken);
+            updateData.accessToken = ytResult.accessToken;
+            updateData.tokenExpiresAt = Timestamp.fromDate(
+              new Date(Date.now() + ytResult.expiresIn * 1000)
+            );
+          }
+          break;
+        case "twitter":
+          if (accountData.refreshToken) {
+            const twResult = await refreshTwitterToken(accountData.refreshToken);
+            updateData.accessToken = twResult.accessToken;
+            updateData.refreshToken = twResult.refreshToken;
+            updateData.tokenExpiresAt = Timestamp.fromDate(
+              new Date(Date.now() + twResult.expiresIn * 1000)
+            );
+          }
+          break;
+        case "facebook": {
+          const fbResult = await refreshFacebookToken(accountData.accessToken);
+          updateData.accessToken = fbResult.accessToken;
+          updateData.tokenExpiresAt = Timestamp.fromDate(
+            new Date(Date.now() + fbResult.expiresIn * 1000)
+          );
+          break;
+        }
+        case "linkedin":
+          if (accountData.refreshToken) {
+            const liResult = await refreshLinkedInToken(accountData.refreshToken);
+            updateData.accessToken = liResult.accessToken;
+            updateData.refreshToken = liResult.refreshToken;
+            updateData.tokenExpiresAt = Timestamp.fromDate(
+              new Date(Date.now() + liResult.expiresIn * 1000)
+            );
+          }
+          break;
+        case "threads": {
+          const thResult = await refreshThreadsToken(accountData.accessToken);
+          updateData.accessToken = thResult.accessToken;
+          updateData.tokenExpiresAt = Timestamp.fromDate(
+            new Date(Date.now() + thResult.expiresIn * 1000)
+          );
+          break;
+        }
+        case "pinterest":
+          if (accountData.refreshToken) {
+            const pinResult = await refreshPinterestToken(accountData.refreshToken);
+            updateData.accessToken = pinResult.accessToken;
+            updateData.refreshToken = pinResult.refreshToken;
+            updateData.tokenExpiresAt = Timestamp.fromDate(
+              new Date(Date.now() + pinResult.expiresIn * 1000)
+            );
+          }
+          break;
+        default:
+          throw createError(
+            `Token refresh is not supported for ${accountData.platform}`,
+            400
+          );
       }
 
       await db.socialAccount(orgId, accountId).update(updateData);

@@ -37,6 +37,9 @@ const statusConfig: Record<PostStatus, { label: string; color: string; icon: Rea
   publishing: { label: "Publishing", color: "bg-yellow-600", icon: Loader2 },
   published: { label: "Published", color: "bg-green-600", icon: CheckCircle },
   failed: { label: "Failed", color: "bg-red-600", icon: XCircle },
+  pending_approval: { label: "Pending Approval", color: "bg-amber-600", icon: Clock },
+  approved: { label: "Approved", color: "bg-emerald-600", icon: CheckCircle },
+  rejected: { label: "Rejected", color: "bg-rose-600", icon: XCircle },
 };
 
 export default function PostsPage() {
