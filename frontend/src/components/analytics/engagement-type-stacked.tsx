@@ -39,16 +39,16 @@ export function EngagementTypeStacked({ data }: EngagementTypeStackedProps) {
   return (
     <ChartWrapper height={300}>
       <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis
           dataKey="date"
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 12 }}
           tickLine={false}
         />
         <YAxis
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 12 }}
           tickLine={false}
           tickFormatter={(v) =>
             v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : v
@@ -59,7 +59,7 @@ export function EngagementTypeStacked({ data }: EngagementTypeStackedProps) {
           verticalAlign="top"
           height={36}
           formatter={(value) => (
-            <span className="text-xs text-slate-300 capitalize">{value}</span>
+            <span className="text-xs text-gray-700 capitalize">{value}</span>
           )}
         />
         <Bar dataKey="likes" name="Likes" stackId="a" fill={COLORS.likes} radius={[0, 0, 0, 0]} />

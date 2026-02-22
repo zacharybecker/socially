@@ -252,10 +252,10 @@ export default function NewPostPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Content Editor */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-white">Content</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-gray-900">Content</CardTitle>
+                <CardDescription className="text-gray-500">
                   Write your post caption and add media
                 </CardDescription>
               </CardHeader>
@@ -263,11 +263,11 @@ export default function NewPostPage() {
                 <Form {...form}>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="content" className="text-slate-200">Caption</Label>
+                      <Label htmlFor="content" className="text-gray-800">Caption</Label>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                        className="text-coral-500 hover:text-coral-600 hover:bg-coral-500/10"
                         onClick={() => router.push("/dashboard/ai")}
                       >
                         <Sparkles className="mr-2 h-4 w-4" />
@@ -282,7 +282,7 @@ export default function NewPostPage() {
                           <FormControl>
                             <Textarea
                               placeholder="What's on your mind?"
-                              className="min-h-32 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+                              className="min-h-32 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-400 resize-none"
                               {...field}
                             />
                           </FormControl>
@@ -290,7 +290,7 @@ export default function NewPostPage() {
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-between text-xs text-slate-400">
+                    <div className="flex justify-between text-xs text-gray-500">
                       <span>{contentValue.length} characters</span>
                       <span>TikTok: 2200 max | Instagram: 2200 max</span>
                     </div>
@@ -299,10 +299,10 @@ export default function NewPostPage() {
 
                 {/* Media Upload */}
                 <div className="space-y-2">
-                  <Label className="text-slate-200">Media</Label>
+                  <Label className="text-gray-800">Media</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {mediaPreviews.map((preview, index) => (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-slate-700">
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-200">
                         <img
                           src={preview}
                           alt={`Media ${index + 1}`}
@@ -317,9 +317,9 @@ export default function NewPostPage() {
                       </div>
                     ))}
                     {mediaPreviews.length < 10 && (
-                      <label className="aspect-square rounded-lg border-2 border-dashed border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-slate-500 transition-colors">
-                        <Upload className="h-8 w-8 text-slate-500 mb-2" />
-                        <span className="text-xs text-slate-500">Upload</span>
+                      <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
+                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                        <span className="text-xs text-gray-400">Upload</span>
                         <input
                           type="file"
                           accept="image/*,video/*"
@@ -338,25 +338,25 @@ export default function NewPostPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Account Selection */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-white">Post To</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-gray-900">Post To</CardTitle>
+                <CardDescription className="text-gray-500">
                   Select accounts to publish to
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {accountsLoading ? (
                   <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
                   </div>
                 ) : accounts.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-sm text-slate-400 mb-3">No accounts connected</p>
+                    <p className="text-sm text-gray-500 mb-3">No accounts connected</p>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-200"
                       onClick={() => router.push("/dashboard/accounts")}
                     >
                       Connect Account
@@ -367,7 +367,7 @@ export default function NewPostPage() {
                     {accounts.map((account) => (
                       <div
                         key={account.id}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50"
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100"
                       >
                         <Checkbox
                           id={account.id}
@@ -380,8 +380,8 @@ export default function NewPostPage() {
                         >
                           <PlatformIcon platform={account.platform} size={32} className="rounded-full" />
                           <div>
-                            <p className="text-sm text-white">@{account.username}</p>
-                            <p className="text-xs text-slate-400 capitalize">{account.platform}</p>
+                            <p className="text-sm text-gray-900">@{account.username}</p>
+                            <p className="text-xs text-gray-500 capitalize">{account.platform}</p>
                           </div>
                         </label>
                       </div>
@@ -392,10 +392,10 @@ export default function NewPostPage() {
             </Card>
 
             {/* Scheduling */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-white">Schedule</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-gray-900">Schedule</CardTitle>
+                <CardDescription className="text-gray-500">
                   When should this post go live?
                 </CardDescription>
               </CardHeader>
@@ -405,7 +405,7 @@ export default function NewPostPage() {
                     variant={!isScheduling ? "default" : "outline"}
                     size="sm"
                     onClick={() => setIsScheduling(false)}
-                    className={!isScheduling ? "bg-blue-600" : "border-slate-600 text-slate-300"}
+                    className={!isScheduling ? "bg-coral-500" : "border-gray-300 text-gray-700"}
                   >
                     Post Now
                   </Button>
@@ -413,7 +413,7 @@ export default function NewPostPage() {
                     variant={isScheduling ? "default" : "outline"}
                     size="sm"
                     onClick={() => setIsScheduling(true)}
-                    className={isScheduling ? "bg-blue-600" : "border-slate-600 text-slate-300"}
+                    className={isScheduling ? "bg-coral-500" : "border-gray-300 text-gray-700"}
                   >
                     Schedule
                   </Button>
@@ -425,40 +425,40 @@ export default function NewPostPage() {
                       <DialogTrigger asChild>
                         <Button
                           variant="outline"
-                          className="w-full justify-start border-slate-600 bg-slate-700/50 text-white hover:bg-slate-700"
+                          className="w-full justify-start border-gray-300 bg-gray-100 text-gray-900 hover:bg-gray-200"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="bg-slate-800 border-slate-700">
+                      <DialogContent className="bg-white border-gray-200">
                         <DialogHeader>
-                          <DialogTitle className="text-white">Select Date</DialogTitle>
+                          <DialogTitle className="text-gray-900">Select Date</DialogTitle>
                         </DialogHeader>
                         <Calendar
                           mode="single"
                           selected={scheduleDate}
                           onSelect={setScheduleDate}
                           disabled={(date) => date < new Date()}
-                          className="rounded-md border border-slate-700"
+                          className="rounded-md border border-gray-200"
                         />
                       </DialogContent>
                     </Dialog>
 
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-slate-400" />
+                      <Clock className="h-4 w-4 text-gray-500" />
                       <Select value={scheduleTime} onValueChange={setScheduleTime}>
-                        <SelectTrigger className="flex-1 bg-slate-700/50 border-slate-600 text-white">
+                        <SelectTrigger className="flex-1 bg-gray-100 border-gray-300 text-gray-900">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectContent className="bg-white border-gray-200">
                           {Array.from({ length: 24 }, (_, i) => {
                             const hour = i.toString().padStart(2, "0");
                             return ["00", "30"].map((minute) => (
                               <SelectItem
                                 key={`${hour}:${minute}`}
                                 value={`${hour}:${minute}`}
-                                className="text-white focus:bg-slate-700"
+                                className="text-gray-900 focus:bg-gray-100"
                               >
                                 {`${hour}:${minute}`}
                               </SelectItem>
@@ -477,7 +477,7 @@ export default function NewPostPage() {
               <Button
                 onClick={() => handlePublish(!isScheduling)}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                className="w-full bg-coral-500 hover:bg-coral-600"
               >
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -490,7 +490,7 @@ export default function NewPostPage() {
                 onClick={handleSaveDraft}
                 disabled={loading}
                 variant="outline"
-                className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="w-full border-gray-300 text-gray-700 hover:bg-gray-200"
               >
                 <Save className="mr-2 h-4 w-4" />
                 Save as Draft

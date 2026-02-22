@@ -9,12 +9,12 @@ interface PostingHeatmapProps {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function getColor(value: number, max: number): string {
-  if (max === 0 || value === 0) return "bg-slate-800";
+  if (max === 0 || value === 0) return "bg-gray-100";
   const intensity = value / max;
-  if (intensity > 0.75) return "bg-blue-500";
-  if (intensity > 0.5) return "bg-blue-600";
-  if (intensity > 0.25) return "bg-blue-700";
-  return "bg-blue-800";
+  if (intensity > 0.75) return "bg-coral-500";
+  if (intensity > 0.5) return "bg-coral-400";
+  if (intensity > 0.25) return "bg-coral-300";
+  return "bg-coral-200";
 }
 
 export function PostingHeatmap({ data }: PostingHeatmapProps) {
@@ -41,15 +41,15 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Posts by Day of Week</p>
+        <p className="mb-2 text-xs font-medium text-gray-500">Posts by Day of Week</p>
         <div className="grid grid-cols-7 gap-1.5">
           {DAYS.map((day, i) => {
             const posts = dayTotals.get(i) || 0;
             return (
               <div key={day} className="text-center">
-                <p className="mb-1 text-[10px] text-slate-500">{day}</p>
+                <p className="mb-1 text-[10px] text-gray-400">{day}</p>
                 <div
-                  className={`flex h-10 items-center justify-center rounded-md text-xs font-medium text-white ${getColor(
+                  className={`flex h-10 items-center justify-center rounded-md text-xs font-medium text-gray-900 ${getColor(
                     posts,
                     maxPosts
                   )}`}
@@ -63,7 +63,7 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
         </div>
       </div>
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">
+        <p className="mb-2 text-xs font-medium text-gray-500">
           Engagement by Day of Week
         </p>
         <div className="grid grid-cols-7 gap-1.5">
@@ -71,9 +71,9 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
             const eng = dayEngagements.get(i) || 0;
             return (
               <div key={`eng-${day}`} className="text-center">
-                <p className="mb-1 text-[10px] text-slate-500">{day}</p>
+                <p className="mb-1 text-[10px] text-gray-400">{day}</p>
                 <div
-                  className={`flex h-10 items-center justify-center rounded-md text-xs font-medium text-white ${getColor(
+                  className={`flex h-10 items-center justify-center rounded-md text-xs font-medium text-gray-900 ${getColor(
                     eng,
                     maxEngagements
                   )}`}
@@ -88,14 +88,14 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
           })}
         </div>
       </div>
-      <div className="flex items-center gap-2 text-[10px] text-slate-500">
+      <div className="flex items-center gap-2 text-[10px] text-gray-400">
         <span>Less</span>
         <div className="flex gap-0.5">
-          <div className="h-3 w-3 rounded-sm bg-slate-800" />
-          <div className="h-3 w-3 rounded-sm bg-blue-800" />
-          <div className="h-3 w-3 rounded-sm bg-blue-700" />
-          <div className="h-3 w-3 rounded-sm bg-blue-600" />
-          <div className="h-3 w-3 rounded-sm bg-blue-500" />
+          <div className="h-3 w-3 rounded-sm bg-gray-100" />
+          <div className="h-3 w-3 rounded-sm bg-coral-200" />
+          <div className="h-3 w-3 rounded-sm bg-coral-300" />
+          <div className="h-3 w-3 rounded-sm bg-coral-400" />
+          <div className="h-3 w-3 rounded-sm bg-coral-500" />
         </div>
         <span>More</span>
       </div>

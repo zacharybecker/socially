@@ -66,12 +66,12 @@ function InviteContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-slate-900">
-      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-white">
+      <Card className="w-full max-w-md bg-white border-gray-200">
         {state === "loading" && (
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 text-blue-400 animate-spin mb-4" />
-            <p className="text-sm text-slate-400">Verifying invitation...</p>
+            <Loader2 className="h-8 w-8 text-coral-500 animate-spin mb-4" />
+            <p className="text-sm text-gray-500">Verifying invitation...</p>
           </CardContent>
         )}
 
@@ -79,33 +79,33 @@ function InviteContent() {
           <>
             <CardHeader className="text-center pb-2">
               <div className="flex justify-center mb-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/20">
-                  <UserPlus className="h-8 w-8 text-blue-400" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-coral-500/10">
+                  <UserPlus className="h-8 w-8 text-coral-500" />
                 </div>
               </div>
-              <CardTitle className="text-xl text-white">
+              <CardTitle className="text-xl text-gray-900">
                 You&apos;ve been invited!
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-gray-500">
                 You&apos;ve been invited to join an organization
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="rounded-lg border border-slate-700 bg-slate-700/30 p-4 space-y-3">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <Building2 className="h-5 w-5 text-slate-400" />
+                  <Building2 className="h-5 w-5 text-gray-500" />
                   <div>
-                    <p className="text-xs text-slate-400">Organization</p>
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-xs text-gray-500">Organization</p>
+                    <p className="text-sm font-medium text-gray-900">
                       {invitation.orgName}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <UserPlus className="h-5 w-5 text-slate-400" />
+                  <UserPlus className="h-5 w-5 text-gray-500" />
                   <div>
-                    <p className="text-xs text-slate-400">Role</p>
-                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 capitalize">
+                    <p className="text-xs text-gray-500">Role</p>
+                    <Badge className="bg-coral-500/10 text-coral-500 border-coral-500/30 capitalize">
                       {invitation.role}
                     </Badge>
                   </div>
@@ -113,14 +113,14 @@ function InviteContent() {
               </div>
 
               <Button
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                className="w-full bg-coral-500 hover:bg-coral-600"
                 onClick={handleAccept}
               >
                 Accept Invitation
               </Button>
               <Button
                 variant="ghost"
-                className="w-full text-slate-400 hover:text-white hover:bg-slate-700"
+                className="w-full text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                 onClick={() => router.push("/login")}
               >
                 Decline
@@ -131,8 +131,8 @@ function InviteContent() {
 
         {state === "accepting" && (
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 text-blue-400 animate-spin mb-4" />
-            <p className="text-sm text-slate-400">Accepting invitation...</p>
+            <Loader2 className="h-8 w-8 text-coral-500 animate-spin mb-4" />
+            <p className="text-sm text-gray-500">Accepting invitation...</p>
           </CardContent>
         )}
 
@@ -141,10 +141,10 @@ function InviteContent() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 mb-4">
               <CheckCircle2 className="h-8 w-8 text-green-400" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-1">
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
               Welcome aboard!
             </h3>
-            <p className="text-sm text-slate-400 text-center">
+            <p className="text-sm text-gray-500 text-center">
               Redirecting you to the dashboard...
             </p>
           </CardContent>
@@ -155,15 +155,15 @@ function InviteContent() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20 mb-4">
               <AlertCircle className="h-8 w-8 text-red-400" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-1">
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
               Invalid Invitation
             </h3>
-            <p className="text-sm text-slate-400 text-center max-w-sm mb-6">
+            <p className="text-sm text-gray-500 text-center max-w-sm mb-6">
               {error}
             </p>
             <Button
               variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
               onClick={() => router.push("/login")}
             >
               Go to Login
@@ -179,8 +179,8 @@ export default function InvitePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-900">
-          <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-white">
+          <Loader2 className="h-8 w-8 text-coral-500 animate-spin" />
         </div>
       }
     >

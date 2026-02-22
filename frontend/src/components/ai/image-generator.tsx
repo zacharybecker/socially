@@ -60,59 +60,59 @@ export function ImageGenerator({ onUseImage }: ImageGeneratorProps) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Generate Image</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Generate Image</CardTitle>
+          <CardDescription className="text-gray-500">
             Create images with AI using DALL-E 3
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-slate-200">Prompt</Label>
+            <Label className="text-gray-800">Prompt</Label>
             <Textarea
               placeholder="Describe the image you want to generate..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-24 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+              className="min-h-24 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 resize-none"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
-              <Label className="text-slate-200">Size</Label>
+              <Label className="text-gray-800">Size</Label>
               <Select value={size} onValueChange={(v) => setSize(v as GenerateImageInput["size"])}>
-                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="1024x1024" className="text-white">Square</SelectItem>
-                  <SelectItem value="1792x1024" className="text-white">Landscape</SelectItem>
-                  <SelectItem value="1024x1792" className="text-white">Portrait</SelectItem>
+                <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="1024x1024" className="text-gray-900">Square</SelectItem>
+                  <SelectItem value="1792x1024" className="text-gray-900">Landscape</SelectItem>
+                  <SelectItem value="1024x1792" className="text-gray-900">Portrait</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-200">Style</Label>
+              <Label className="text-gray-800">Style</Label>
               <Select value={style} onValueChange={(v) => setStyle(v as GenerateImageInput["style"])}>
-                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="vivid" className="text-white">Vivid</SelectItem>
-                  <SelectItem value="natural" className="text-white">Natural</SelectItem>
+                <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="vivid" className="text-gray-900">Vivid</SelectItem>
+                  <SelectItem value="natural" className="text-gray-900">Natural</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-200">Quality</Label>
+              <Label className="text-gray-800">Quality</Label>
               <Select value={quality} onValueChange={(v) => setQuality(v as GenerateImageInput["quality"])}>
-                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="standard" className="text-white">Standard</SelectItem>
-                  <SelectItem value="hd" className="text-white">HD</SelectItem>
+                <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="standard" className="text-gray-900">Standard</SelectItem>
+                  <SelectItem value="hd" className="text-gray-900">HD</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -121,7 +121,7 @@ export function ImageGenerator({ onUseImage }: ImageGeneratorProps) {
           <Button
             onClick={handleGenerate}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+            className="w-full bg-coral-500 hover:bg-coral-600 text-white"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -133,23 +133,23 @@ export function ImageGenerator({ onUseImage }: ImageGeneratorProps) {
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Generated Images</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Generated Images</CardTitle>
+          <CardDescription className="text-gray-500">
             {images.length} image{images.length !== 1 ? "s" : ""} generated
           </CardDescription>
         </CardHeader>
         <CardContent>
           {images.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
+            <div className="text-center py-8 text-gray-500">
               <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Generated images will appear here</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {images.map((image, index) => (
-                <div key={index} className="relative group rounded-lg overflow-hidden bg-slate-700">
+                <div key={index} className="relative group rounded-lg overflow-hidden bg-gray-200">
                   <img
                     src={image.url}
                     alt={image.prompt}
@@ -159,7 +159,7 @@ export function ImageGenerator({ onUseImage }: ImageGeneratorProps) {
                     {onUseImage && (
                       <Button
                         size="sm"
-                        className="bg-gradient-to-r from-blue-500 to-purple-600"
+                        className="bg-coral-500 hover:bg-coral-600 text-white"
                         onClick={() => onUseImage(image.url)}
                       >
                         Use in Post
@@ -168,7 +168,7 @@ export function ImageGenerator({ onUseImage }: ImageGeneratorProps) {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-slate-500 text-white hover:bg-slate-600"
+                      className="border-gray-300 text-white hover:bg-gray-200"
                       onClick={() => window.open(image.url, "_blank")}
                     >
                       <Download className="h-4 w-4" />

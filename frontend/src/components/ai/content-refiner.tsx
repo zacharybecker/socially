@@ -70,26 +70,26 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Refine Content</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Refine Content</CardTitle>
+          <CardDescription className="text-gray-500">
             Rewrite, shorten, expand, or change tone of your content
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-slate-200">Content</Label>
+            <Label className="text-gray-800">Content</Label>
             <Textarea
               placeholder="Paste your content here..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-32 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+              className="min-h-32 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-200">Action</Label>
+            <Label className="text-gray-800">Action</Label>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { value: "rewrite" as const, label: "Rewrite", icon: RefreshCw },
@@ -102,8 +102,8 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
                   onClick={() => setAction(value)}
                   className={`flex items-center gap-2 p-2.5 rounded-lg text-sm font-medium transition-colors ${
                     action === value
-                      ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
-                      : "bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700"
+                      ? "bg-coral-500/10 text-coral-500 border border-coral-500/30"
+                      : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -115,17 +115,17 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
 
           {action === "change_tone" && (
             <div className="space-y-2">
-              <Label className="text-slate-200">Tone</Label>
+              <Label className="text-gray-800">Tone</Label>
               <Select value={tone} onValueChange={setTone}>
-                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="professional" className="text-white">Professional</SelectItem>
-                  <SelectItem value="casual" className="text-white">Casual</SelectItem>
-                  <SelectItem value="humorous" className="text-white">Humorous</SelectItem>
-                  <SelectItem value="dramatic" className="text-white">Dramatic</SelectItem>
-                  <SelectItem value="inspirational" className="text-white">Inspirational</SelectItem>
+                <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="professional" className="text-gray-900">Professional</SelectItem>
+                  <SelectItem value="casual" className="text-gray-900">Casual</SelectItem>
+                  <SelectItem value="humorous" className="text-gray-900">Humorous</SelectItem>
+                  <SelectItem value="dramatic" className="text-gray-900">Dramatic</SelectItem>
+                  <SelectItem value="inspirational" className="text-gray-900">Inspirational</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -137,7 +137,7 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
               checked={useBrandVoice}
               onCheckedChange={(checked) => setUseBrandVoice(checked === true)}
             />
-            <label htmlFor="brandVoice" className="text-sm text-slate-300 cursor-pointer">
+            <label htmlFor="brandVoice" className="text-sm text-gray-700 cursor-pointer">
               Use Brand Voice
             </label>
           </div>
@@ -145,7 +145,7 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
           <Button
             onClick={handleRefine}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+            className="w-full bg-coral-500 hover:bg-coral-600 text-white"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -157,12 +157,12 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-white">Refined Content</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-gray-900">Refined Content</CardTitle>
+              <CardDescription className="text-gray-500">
                 Your improved content
               </CardDescription>
             </div>
@@ -172,7 +172,7 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
                   variant="ghost"
                   size="sm"
                   onClick={handleCopy}
-                  className="text-slate-400 hover:text-white"
+                  className="text-gray-500 hover:text-gray-900"
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
@@ -182,7 +182,7 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
         </CardHeader>
         <CardContent>
           {!result ? (
-            <div className="text-center py-8 text-slate-400">
+            <div className="text-center py-8 text-gray-500">
               <RefreshCw className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Refined content will appear here</p>
             </div>
@@ -191,12 +191,12 @@ export function ContentRefiner({ initialContent = "", onUseContent }: ContentRef
               <Textarea
                 value={result}
                 readOnly
-                className="min-h-48 bg-slate-700/50 border-slate-600 text-white font-mono text-sm resize-none"
+                className="min-h-48 bg-gray-100 border-gray-300 text-gray-900 font-mono text-sm resize-none"
               />
               {onUseContent && (
                 <Button
                   onClick={() => onUseContent(result)}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                  className="w-full bg-coral-500 hover:bg-coral-600 text-white"
                 >
                   Use This Content
                 </Button>

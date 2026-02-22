@@ -24,7 +24,7 @@ export function TopPostsHorizontalBar({ data }: TopPostsHorizontalBarProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+      <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
         No post data available
       </div>
     );
@@ -39,8 +39,8 @@ export function TopPostsHorizontalBar({ data }: TopPostsHorizontalBarProps) {
       >
         <XAxis
           type="number"
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 12 }}
           tickLine={false}
           tickFormatter={(v) =>
             v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : v
@@ -49,8 +49,8 @@ export function TopPostsHorizontalBar({ data }: TopPostsHorizontalBarProps) {
         <YAxis
           type="category"
           dataKey="name"
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 11 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 11 }}
           tickLine={false}
           width={150}
         />
@@ -59,14 +59,14 @@ export function TopPostsHorizontalBar({ data }: TopPostsHorizontalBarProps) {
             if (!active || !payload?.length) return null;
             const item = payload[0].payload;
             return (
-              <div className="rounded-lg border border-slate-700 bg-slate-800 p-3 shadow-xl">
-                <p className="mb-1 text-xs font-medium text-white">
+              <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-xl">
+                <p className="mb-1 text-xs font-medium text-gray-900">
                   {item.name}
                 </p>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-gray-700">
                   {item.engagements.toLocaleString()} engagements
                 </p>
-                <p className="text-xs text-slate-400 capitalize">
+                <p className="text-xs text-gray-500 capitalize">
                   {item.platform}
                 </p>
               </div>

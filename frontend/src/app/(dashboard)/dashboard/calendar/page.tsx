@@ -58,7 +58,7 @@ export default function CalendarPage() {
         title="Content Calendar"
         description="Plan and visualize your content schedule"
         actions={
-          <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+          <Button asChild className="bg-coral-500 hover:bg-coral-600">
             <Link href="/dashboard/posts/new">
               <Plus className="mr-2 h-4 w-4" />
               Create Post
@@ -68,11 +68,11 @@ export default function CalendarPage() {
       />
 
       <div className="p-6">
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-gray-50 border-gray-200">
           <CardContent className="p-6">
             {/* Calendar Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-gray-900">
                 {format(currentMonth, "MMMM yyyy")}
               </h2>
               <div className="flex gap-2">
@@ -80,14 +80,14 @@ export default function CalendarPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-200"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setCurrentMonth(new Date())}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-200"
                 >
                   Today
                 </Button>
@@ -95,7 +95,7 @@ export default function CalendarPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-200"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -104,7 +104,7 @@ export default function CalendarPage() {
 
             {loading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-coral-500" />
               </div>
             ) : (
               <>
@@ -113,7 +113,7 @@ export default function CalendarPage() {
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                     <div
                       key={day}
-                      className="text-center text-sm font-medium text-slate-400 py-2"
+                      className="text-center text-sm font-medium text-gray-500 py-2"
                     >
                       {day}
                     </div>
@@ -121,13 +121,13 @@ export default function CalendarPage() {
                 </div>
 
                 {/* Calendar Grid */}
-                <div className="grid grid-cols-7 gap-px bg-slate-700 rounded-lg overflow-hidden">
+                <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
                   {paddedDays.map((day, index) => {
                     if (!day) {
                       return (
                         <div
                           key={`empty-${index}`}
-                          className="min-h-24 bg-slate-800/50 p-2"
+                          className="min-h-24 bg-gray-50 p-2"
                         />
                       );
                     }
@@ -139,7 +139,7 @@ export default function CalendarPage() {
                     return (
                       <div
                         key={day.toISOString()}
-                        className={`min-h-24 bg-slate-800 p-2 ${
+                        className={`min-h-24 bg-white p-2 ${
                           !isCurrentMonth ? "opacity-40" : ""
                         }`}
                       >
@@ -147,8 +147,8 @@ export default function CalendarPage() {
                           <span
                             className={`text-sm font-medium ${
                               isCurrentDay
-                                ? "flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"
-                                : "text-slate-300"
+                                ? "flex h-6 w-6 items-center justify-center rounded-full bg-coral-500 text-white"
+                                : "text-gray-700"
                             }`}
                           >
                             {format(day, "d")}
@@ -157,7 +157,7 @@ export default function CalendarPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-5 w-5 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100"
+                              className="h-5 w-5 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100"
                               asChild
                             >
                               <Link href={`/dashboard/posts/new?date=${format(day, "yyyy-MM-dd")}`}>
@@ -176,10 +176,10 @@ export default function CalendarPage() {
                               <Badge
                                 className={`w-full justify-start truncate text-xs ${
                                   post.status === "published"
-                                    ? "bg-green-600/20 text-green-400"
+                                    ? "bg-green-600/20 text-green-600"
                                     : post.status === "scheduled"
-                                    ? "bg-blue-600/20 text-blue-400"
-                                    : "bg-slate-600/20 text-slate-400"
+                                    ? "bg-coral-500/10 text-coral-500"
+                                    : "bg-gray-200 text-gray-500"
                                 }`}
                               >
                                 {post.content?.slice(0, 20) || "No caption"}
@@ -187,7 +187,7 @@ export default function CalendarPage() {
                             </Link>
                           ))}
                           {dayPosts.length > 2 && (
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-gray-400">
                               +{dayPosts.length - 2} more
                             </span>
                           )}

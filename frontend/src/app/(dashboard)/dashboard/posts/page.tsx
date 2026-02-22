@@ -32,7 +32,7 @@ import { useOrganization } from "@/lib/hooks";
 import { toast } from "sonner";
 
 const statusConfig: Record<PostStatus, { label: string; color: string; icon: React.ElementType }> = {
-  draft: { label: "Draft", color: "bg-slate-600", icon: Edit },
+  draft: { label: "Draft", color: "bg-gray-400", icon: Edit },
   scheduled: { label: "Scheduled", color: "bg-blue-600", icon: Clock },
   publishing: { label: "Publishing", color: "bg-yellow-600", icon: Loader2 },
   published: { label: "Published", color: "bg-green-600", icon: CheckCircle },
@@ -101,7 +101,7 @@ export default function PostsPage() {
         title="Posts"
         description="Manage your content across all platforms"
         actions={
-          <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+          <Button asChild className="bg-coral-500 hover:bg-coral-600">
             <Link href="/dashboard/posts/new">
               <Plus className="mr-2 h-4 w-4" />
               Create Post
@@ -112,20 +112,20 @@ export default function PostsPage() {
 
       <div className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-slate-800 border-slate-700 mb-6">
-            <TabsTrigger value="all" className="data-[state=active]:bg-slate-700 text-slate-300 data-[state=active]:text-white">
+          <TabsList className="bg-gray-50 border-gray-200 mb-6">
+            <TabsTrigger value="all" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
               All Posts
             </TabsTrigger>
-            <TabsTrigger value="draft" className="data-[state=active]:bg-slate-700 text-slate-300 data-[state=active]:text-white">
+            <TabsTrigger value="draft" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
               Drafts
             </TabsTrigger>
-            <TabsTrigger value="scheduled" className="data-[state=active]:bg-slate-700 text-slate-300 data-[state=active]:text-white">
+            <TabsTrigger value="scheduled" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
               Scheduled
             </TabsTrigger>
-            <TabsTrigger value="published" className="data-[state=active]:bg-slate-700 text-slate-300 data-[state=active]:text-white">
+            <TabsTrigger value="published" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
               Published
             </TabsTrigger>
-            <TabsTrigger value="failed" className="data-[state=active]:bg-slate-700 text-slate-300 data-[state=active]:text-white">
+            <TabsTrigger value="failed" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
               Failed
             </TabsTrigger>
           </TabsList>
@@ -133,19 +133,19 @@ export default function PostsPage() {
           <TabsContent value={activeTab} className="mt-0">
             {loading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-coral-500" />
               </div>
             ) : filteredPosts.length === 0 ? (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Calendar className="h-16 w-16 text-slate-600 mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">
+                  <Calendar className="h-16 w-16 text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
                     {activeTab === "all" ? "No posts yet" : `No ${activeTab} posts`}
                   </h3>
-                  <p className="text-sm text-slate-400 text-center mb-6 max-w-md">
+                  <p className="text-sm text-gray-500 text-center mb-6 max-w-md">
                     Create your first post to start building your content calendar and engaging with your audience.
                   </p>
-                  <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                  <Button asChild className="bg-coral-500 hover:bg-coral-600">
                     <Link href="/dashboard/posts/new">
                       <Plus className="mr-2 h-4 w-4" />
                       Create Your First Post
@@ -160,12 +160,12 @@ export default function PostsPage() {
                   const StatusIcon = status.icon;
 
                   return (
-                    <Card key={post.id} className="bg-slate-800/50 border-slate-700">
+                    <Card key={post.id} className="bg-gray-50 border-gray-200">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           {/* Media Preview */}
                           {post.mediaUrls.length > 0 ? (
-                            <div className="h-20 w-20 rounded-lg bg-slate-700 overflow-hidden flex-shrink-0">
+                            <div className="h-20 w-20 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
                               <img
                                 src={post.mediaUrls[0]}
                                 alt="Post media"
@@ -173,8 +173,8 @@ export default function PostsPage() {
                               />
                             </div>
                           ) : (
-                            <div className="h-20 w-20 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
-                              <Calendar className="h-8 w-8 text-slate-500" />
+                            <div className="h-20 w-20 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                              <Calendar className="h-8 w-8 text-gray-400" />
                             </div>
                           )}
 
@@ -186,17 +186,17 @@ export default function PostsPage() {
                                 {status.label}
                               </Badge>
                               {post.scheduledAt && (
-                                <span className="text-xs text-slate-400">
+                                <span className="text-xs text-gray-500">
                                   {format(new Date(post.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-white line-clamp-2 mb-2">
+                            <p className="text-sm text-gray-900 line-clamp-2 mb-2">
                               {post.content || "No caption"}
                             </p>
                             <div className="flex items-center gap-2">
                               {post.platforms.map((platform, idx) => (
-                                <Badge key={idx} variant="secondary" className="bg-slate-700 text-slate-300 text-xs">
+                                <Badge key={idx} variant="secondary" className="bg-gray-200 text-gray-700 text-xs">
                                   @{accountMap.get(platform.accountId) || platform.accountId}
                                 </Badge>
                               ))}
@@ -206,18 +206,18 @@ export default function PostsPage() {
                           {/* Actions */}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                              <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-900">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
-                              <DropdownMenuItem asChild className="text-white focus:bg-slate-700 cursor-pointer">
+                            <DropdownMenuContent align="end" className="bg-white border-gray-200">
+                              <DropdownMenuItem asChild className="text-gray-900 focus:bg-gray-100 cursor-pointer">
                                 <Link href={`/dashboard/posts/${post.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View
                                 </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild className="text-white focus:bg-slate-700 cursor-pointer">
+                              <DropdownMenuItem asChild className="text-gray-900 focus:bg-gray-100 cursor-pointer">
                                 <Link href={`/dashboard/posts/${post.id}/edit`}>
                                   <Edit className="mr-2 h-4 w-4" />
                                   Edit
@@ -225,7 +225,7 @@ export default function PostsPage() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleDelete(post.id)}
-                                className="text-red-400 focus:bg-slate-700 focus:text-red-400 cursor-pointer"
+                                className="text-red-400 focus:bg-gray-100 focus:text-red-400 cursor-pointer"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete

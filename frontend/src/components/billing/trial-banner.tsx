@@ -21,7 +21,7 @@ export function TrialBanner() {
 
   return (
     <>
-      <div className="relative flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white text-sm">
+      <div className="relative flex items-center justify-between px-4 py-2.5 bg-coral-500 text-white text-sm">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4" />
           <span>

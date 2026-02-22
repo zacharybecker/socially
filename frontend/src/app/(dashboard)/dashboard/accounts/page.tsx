@@ -136,15 +136,15 @@ export default function AccountsPage() {
         actions={
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+              <Button className="bg-coral-500 hover:bg-coral-600">
                 <Plus className="mr-2 h-4 w-4" />
                 Connect Account
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogContent className="bg-white border-gray-200">
               <DialogHeader>
-                <DialogTitle className="text-white">Connect a Social Account</DialogTitle>
-                <DialogDescription className="text-slate-400">
+                <DialogTitle className="text-gray-900">Connect a Social Account</DialogTitle>
+                <DialogDescription className="text-gray-500">
                   Choose a platform to connect. You&apos;ll be redirected to authorize access.
                 </DialogDescription>
               </DialogHeader>
@@ -155,7 +155,7 @@ export default function AccountsPage() {
                     <Button
                       key={platform}
                       variant="outline"
-                      className="w-full justify-start gap-3 h-14 border-slate-600 bg-slate-700/50 text-white hover:bg-slate-700"
+                      className="w-full justify-start gap-3 h-14 border-gray-300 bg-gray-100 text-gray-900 hover:bg-gray-200"
                       onClick={() => handleConnect(platform)}
                       disabled={connecting !== null}
                     >
@@ -164,13 +164,13 @@ export default function AccountsPage() {
                       {connecting === platform ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
                       ) : (
-                        <ExternalLink className="h-4 w-4 text-slate-400" />
+                        <ExternalLink className="h-4 w-4 text-gray-500" />
                       )}
                     </Button>
                   );
                 })}
               </div>
-              <p className="text-xs text-slate-500 text-center">
+              <p className="text-xs text-gray-400 text-center">
                 You&apos;ll be redirected to authorize access on the selected platform.
               </p>
             </DialogContent>
@@ -181,21 +181,21 @@ export default function AccountsPage() {
       <div className="p-6">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
           </div>
         ) : accounts.length === 0 ? (
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-gray-50 border-gray-200">
             <CardContent className="flex flex-col items-center justify-center py-16">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-700 mb-4">
-                <Plus className="h-8 w-8 text-slate-400" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-200 mb-4">
+                <Plus className="h-8 w-8 text-gray-500" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">No accounts connected</h3>
-              <p className="text-sm text-slate-400 text-center mb-6 max-w-md">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No accounts connected</h3>
+              <p className="text-sm text-gray-500 text-center mb-6 max-w-md">
                 Connect your TikTok or Instagram accounts to start scheduling and publishing posts from one place.
               </p>
               <Button
                 onClick={() => setDialogOpen(true)}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                className="bg-coral-500 hover:bg-coral-600"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Connect Your First Account
@@ -207,7 +207,7 @@ export default function AccountsPage() {
             {accounts.map((account) => {
               const config = platformConfig[account.platform];
               return (
-                <Card key={account.id} className="bg-slate-800/50 border-slate-700">
+                <Card key={account.id} className="bg-gray-50 border-gray-200">
                   <CardHeader className="flex flex-row items-center gap-4">
                     <div className="relative h-12 w-12">
                       <Avatar className="h-12 w-12">
@@ -220,16 +220,16 @@ export default function AccountsPage() {
                         <PlatformIcon
                           platform={account.platform}
                           size={18}
-                          className="absolute -bottom-0.5 -right-0.5 rounded-md ring-2 ring-slate-800"
+                          className="absolute -bottom-0.5 -right-0.5 rounded-md ring-2 ring-white"
                         />
                       )}
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-base text-white">
+                      <CardTitle className="text-base text-gray-900">
                         @{account.username}
                       </CardTitle>
-                      <CardDescription className="text-slate-400">
-                        <Badge variant="secondary" className="bg-slate-700 text-slate-300">
+                      <CardDescription className="text-gray-500">
+                        <Badge variant="secondary" className="bg-gray-200 text-gray-700">
                           {config.name}
                         </Badge>
                       </CardDescription>
@@ -240,7 +240,7 @@ export default function AccountsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                        className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-200"
                         onClick={() => handleRefresh(account)}
                       >
                         <RefreshCw className="mr-2 h-3 w-3" />
@@ -255,7 +255,7 @@ export default function AccountsPage() {
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                    <p className="text-xs text-slate-500 mt-3">
+                    <p className="text-xs text-gray-400 mt-3">
                       Connected {new Date(account.connectedAt).toLocaleDateString()}
                     </p>
                   </CardContent>

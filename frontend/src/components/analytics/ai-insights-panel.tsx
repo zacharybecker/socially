@@ -48,26 +48,26 @@ interface AIInsightsPanelProps {
 
 export function AIInsightsPanel({ insights, isLoading }: AIInsightsPanelProps) {
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card className="bg-gray-50 border-gray-200">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-white">
-          <Sparkles className="h-5 w-5 text-purple-400" />
+        <CardTitle className="flex items-center gap-2 text-gray-900">
+          <Sparkles className="h-5 w-5 text-coral-500" />
           AI Insights
         </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-            <span className="ml-2 text-sm text-slate-400">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+            <span className="ml-2 text-sm text-gray-500">
               Analyzing your data...
             </span>
           </div>
         ) : !insights?.length ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Sparkles className="mb-3 h-10 w-10 text-slate-600" />
-            <p className="text-sm text-slate-400">No insights available</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <Sparkles className="mb-3 h-10 w-10 text-gray-300" />
+            <p className="text-sm text-gray-500">No insights available</p>
+            <p className="mt-1 text-xs text-gray-400">
               Publish more content to generate AI insights
             </p>
           </div>
@@ -79,7 +79,7 @@ export function AIInsightsPanel({ insights, isLoading }: AIInsightsPanelProps) {
               return (
                 <div
                   key={i}
-                  className="rounded-lg border border-slate-700 bg-slate-800/80 p-4"
+                  className="rounded-lg border border-gray-200 bg-white p-4"
                 >
                   <div className="mb-2 flex items-center gap-2">
                     <Icon className={`h-4 w-4 ${config.color}`} />
@@ -89,14 +89,14 @@ export function AIInsightsPanel({ insights, isLoading }: AIInsightsPanelProps) {
                     >
                       {config.label}
                     </Badge>
-                    <span className="ml-auto text-[10px] text-slate-500">
+                    <span className="ml-auto text-[10px] text-gray-400">
                       {Math.round(insight.confidence * 100)}% confidence
                     </span>
                   </div>
-                  <h4 className="mb-1 text-sm font-medium text-white">
+                  <h4 className="mb-1 text-sm font-medium text-gray-900">
                     {insight.title}
                   </h4>
-                  <p className="text-xs leading-relaxed text-slate-400">
+                  <p className="text-xs leading-relaxed text-gray-500">
                     {insight.description}
                   </p>
                 </div>

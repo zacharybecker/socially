@@ -66,10 +66,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+    <Card className="border-gray-200 bg-white backdrop-blur">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-white">Create an account</CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardTitle className="text-2xl font-bold text-gray-900">Create an account</CardTitle>
+        <CardDescription className="text-gray-500">
           Enter your details to get started
         </CardDescription>
       </CardHeader>
@@ -81,12 +81,12 @@ export default function RegisterPage() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-200">Name</FormLabel>
+                  <FormLabel className="text-gray-800">Name</FormLabel>
                   <FormControl>
                     <Input
                       type="text"
                       placeholder="John Doe"
-                      className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                      className="bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500"
                       {...field}
                     />
                   </FormControl>
@@ -99,12 +99,12 @@ export default function RegisterPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-200">Email</FormLabel>
+                  <FormLabel className="text-gray-800">Email</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="you@example.com"
-                      className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                      className="bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500"
                       {...field}
                     />
                   </FormControl>
@@ -117,12 +117,12 @@ export default function RegisterPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-200">Password</FormLabel>
+                  <FormLabel className="text-gray-800">Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       placeholder="Create a password"
-                      className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                      className="bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500"
                       {...field}
                     />
                   </FormControl>
@@ -135,12 +135,12 @@ export default function RegisterPage() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-200">Confirm Password</FormLabel>
+                  <FormLabel className="text-gray-800">Confirm Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       placeholder="Confirm your password"
-                      className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                      className="bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500"
                       {...field}
                     />
                   </FormControl>
@@ -159,8 +159,8 @@ export default function RegisterPage() {
         </Form>
 
         <div className="relative my-6">
-          <Separator className="bg-slate-600" />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-800 px-2 text-xs text-slate-400">
+          <Separator className="bg-gray-300" />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-500">
             or continue with
           </span>
         </div>
@@ -168,7 +168,7 @@ export default function RegisterPage() {
         <Button
           type="button"
           variant="outline"
-          className="w-full border-slate-600 bg-slate-700/50 text-white hover:bg-slate-700"
+          className="w-full border-gray-300 bg-gray-100 text-gray-900 hover:bg-gray-200"
           onClick={handleGoogleSignIn}
           disabled={loading || authLoading}
         >
@@ -194,9 +194,9 @@ export default function RegisterPage() {
         </Button>
       </CardContent>
       <CardFooter>
-        <p className="text-sm text-slate-400 w-full text-center">
+        <p className="text-sm text-gray-500 w-full text-center">
           Already have an account?{" "}
-          <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+          <Link href="/login" className="text-coral-500 hover:text-coral-400 font-medium">
             Sign in
           </Link>
         </p>

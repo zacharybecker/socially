@@ -38,16 +38,16 @@ export function PostPerformanceBar({
   return (
     <ChartWrapper height={300}>
       <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis
           dataKey="name"
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 12 }}
           tickLine={false}
         />
         <YAxis
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 12 }}
           tickLine={false}
           tickFormatter={(v) =>
             v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : v

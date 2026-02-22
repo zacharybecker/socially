@@ -70,15 +70,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-slate-800">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+      <div className="flex h-16 items-center gap-2 px-6 border-b border-gray-200">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-coral-500">
           <Sparkles className="h-4 w-4 text-white" />
         </div>
-        <span className="text-lg font-semibold text-white">Social Manager</span>
+        <span className="text-lg font-semibold text-gray-900">Social Manager</span>
       </div>
 
       {/* Organization Selector */}
-      <div className="px-4 py-4 border-b border-slate-800">
+      <div className="px-4 py-4 border-b border-gray-200">
         <Select
           value={currentOrganization?.id || ""}
           onValueChange={(value) => {
@@ -86,15 +86,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             if (org) setCurrentOrganization(org);
           }}
         >
-          <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white">
+          <SelectTrigger className="w-full bg-gray-50 border-gray-200 text-gray-900">
             <SelectValue placeholder="Select organization" />
           </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
+          <SelectContent className="bg-white border-gray-200">
             {Array.isArray(organizations) && organizations.map((org) => (
               <SelectItem
                 key={org.id}
                 value={org.id}
-                className="text-white focus:bg-slate-700 focus:text-white"
+                className="text-gray-900 focus:bg-gray-100 focus:text-gray-900"
               >
                 {org.name}
               </SelectItem>
@@ -115,8 +115,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-slate-800 text-white"
-                  : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                  ? "bg-gray-100 text-gray-900"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -127,8 +127,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       {/* Create Post Button */}
-      <div className="px-3 py-4 border-t border-slate-800">
-        <Button asChild className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700" onClick={onNavigate}>
+      <div className="px-3 py-4 border-t border-gray-200">
+        <Button asChild className="w-full bg-coral-500 hover:bg-coral-600" onClick={onNavigate}>
           <Link href="/dashboard/posts/new">
             <Plus className="mr-2 h-4 w-4" />
             Create Post
@@ -137,46 +137,46 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* User Menu */}
-      <div className="border-t border-slate-800 p-4">
+      <div className="border-t border-gray-200 p-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 px-2 py-6 text-left hover:bg-slate-800"
+              className="w-full justify-start gap-3 px-2 py-6 text-left hover:bg-gray-100"
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage src={userProfile?.photoURL || undefined} />
-                <AvatarFallback className="bg-slate-700 text-white">
+                <AvatarFallback className="bg-gray-200 text-gray-900">
                   {getInitials(userProfile?.displayName || user?.email || null)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden">
-                <p className="truncate text-sm font-medium text-white">
+                <p className="truncate text-sm font-medium text-gray-900">
                   {userProfile?.displayName || "User"}
                 </p>
-                <p className="truncate text-xs text-slate-400">
+                <p className="truncate text-xs text-gray-500">
                   {userProfile?.email}
                 </p>
               </div>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
+              <ChevronDown className="h-4 w-4 text-gray-500" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-56 bg-slate-800 border-slate-700"
+            className="w-56 bg-white border-gray-200"
           >
-            <DropdownMenuLabel className="text-slate-400">My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-slate-700" />
-            <DropdownMenuItem asChild className="text-white focus:bg-slate-700 focus:text-white cursor-pointer">
+            <DropdownMenuLabel className="text-gray-500">My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-gray-200" />
+            <DropdownMenuItem asChild className="text-gray-900 focus:bg-gray-100 focus:text-gray-900 cursor-pointer">
               <Link href="/dashboard/settings" onClick={onNavigate}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-slate-700" />
+            <DropdownMenuSeparator className="bg-gray-200" />
             <DropdownMenuItem
               onClick={() => signOut()}
-              className="text-red-400 focus:bg-slate-700 focus:text-red-400 cursor-pointer"
+              className="text-red-400 focus:bg-gray-100 focus:text-red-400 cursor-pointer"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
@@ -198,7 +198,7 @@ export function Sidebar({
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-50 hidden md:flex w-64 flex-col bg-slate-900 border-r border-slate-800">
+      <aside className="fixed inset-y-0 left-0 z-50 hidden md:flex w-64 flex-col bg-white border-r border-gray-200">
         <SidebarContent />
       </aside>
 
@@ -206,7 +206,7 @@ export function Sidebar({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="left"
-          className="w-64 p-0 bg-slate-900 border-slate-800"
+          className="w-64 p-0 bg-white border-gray-200"
           showCloseButton={false}
         >
           <VisuallyHidden.Root>

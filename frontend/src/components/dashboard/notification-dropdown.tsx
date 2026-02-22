@@ -59,7 +59,7 @@ export function NotificationDropdown() {
       <Button
         variant="ghost"
         size="icon"
-        className="relative text-slate-400 hover:text-white hover:bg-slate-800"
+        className="relative text-gray-500 hover:text-gray-900 hover:bg-gray-100"
         onClick={() => setOpen(!open)}
       >
         <Bell className="h-5 w-5" />
@@ -79,16 +79,16 @@ export function NotificationDropdown() {
           />
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-lg border border-slate-700 bg-slate-800 shadow-xl">
+          <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-lg border border-gray-200 bg-white shadow-xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-700 p-3">
-              <h3 className="text-sm font-medium text-white">Notifications</h3>
+            <div className="flex items-center justify-between border-b border-gray-200 p-3">
+              <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
               <div className="flex items-center gap-1">
                 {unreadCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-slate-400 hover:text-white hover:bg-slate-700"
+                    className="h-7 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-200"
                     onClick={markAllRead}
                   >
                     <CheckCheck className="h-3.5 w-3.5 mr-1" />
@@ -98,7 +98,7 @@ export function NotificationDropdown() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-slate-400 hover:text-white hover:bg-slate-700"
+                  className="h-7 w-7 text-gray-500 hover:text-gray-900 hover:bg-gray-200"
                   onClick={() => setOpen(false)}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -110,13 +110,13 @@ export function NotificationDropdown() {
             <div className="max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 px-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-700/50 mb-3">
-                    <Bell className="h-6 w-6 text-slate-500" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-3">
+                    <Bell className="h-6 w-6 text-gray-500" />
                   </div>
-                  <p className="text-sm font-medium text-white mb-1">
+                  <p className="text-sm font-medium text-gray-900 mb-1">
                     No notifications
                   </p>
-                  <p className="text-xs text-slate-400 text-center">
+                  <p className="text-xs text-gray-500 text-center">
                     You&apos;re all caught up! Notifications about your posts and
                     team activity will appear here.
                   </p>
@@ -128,8 +128,8 @@ export function NotificationDropdown() {
                   return (
                     <button
                       key={notification.id}
-                      className={`w-full flex items-start gap-3 p-3 text-left hover:bg-slate-700/50 transition-colors ${
-                        !notification.read ? "bg-slate-700/20" : ""
+                      className={`w-full flex items-start gap-3 p-3 text-left hover:bg-gray-100 transition-colors ${
+                        !notification.read ? "bg-gray-50" : ""
                       }`}
                       onClick={() => markAsRead(notification.id)}
                     >
@@ -140,19 +140,19 @@ export function NotificationDropdown() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm ${!notification.read ? "font-medium text-white" : "text-slate-300"}`}
+                          className={`text-sm ${!notification.read ? "font-medium text-gray-900" : "text-gray-700"}`}
                         >
                           {notification.title}
                         </p>
-                        <p className="text-xs text-slate-400 truncate">
+                        <p className="text-xs text-gray-500 truncate">
                           {notification.description}
                         </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-gray-400 mt-0.5">
                           {notification.time}
                         </p>
                       </div>
                       {!notification.read && (
-                        <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                        <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-coral-500" />
                       )}
                     </button>
                   );
@@ -162,10 +162,10 @@ export function NotificationDropdown() {
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="border-t border-slate-700 p-2">
+              <div className="border-t border-gray-200 p-2">
                 <Button
                   variant="ghost"
-                  className="w-full text-xs text-slate-400 hover:text-white hover:bg-slate-700"
+                  className="w-full text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-200"
                 >
                   View All Notifications
                 </Button>

@@ -106,22 +106,22 @@ export function PlanComparison({ currentPlan, onSelectPlan }: PlanComparisonProp
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th className="text-left p-3 text-slate-400 font-medium">Feature</th>
+            <th className="text-left p-3 text-gray-500 font-medium">Feature</th>
             {plans.map((plan) => (
               <th key={plan.tier} className="p-3 text-center min-w-[140px]">
                 <div className="space-y-1">
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-white font-semibold">{plan.name}</span>
+                    <span className="text-gray-900 font-semibold">{plan.name}</span>
                     {plan.tier === currentPlan && (
-                      <Badge className="bg-blue-600/20 text-blue-400 text-xs">Current</Badge>
+                      <Badge className="bg-coral-500/10 text-coral-500 text-xs">Current</Badge>
                     )}
                     {"popular" in plan && plan.popular && plan.tier !== currentPlan && (
-                      <Badge className="bg-purple-600/20 text-purple-400 text-xs">Popular</Badge>
+                      <Badge className="bg-coral-500/10 text-coral-500 text-xs">Popular</Badge>
                     )}
                   </div>
-                  <div className="text-white font-bold text-lg">
+                  <div className="text-gray-900 font-bold text-lg">
                     {plan.price === 0 ? "Free" : `$${plan.price}`}
-                    {plan.price > 0 && <span className="text-xs font-normal text-slate-400">/mo</span>}
+                    {plan.price > 0 && <span className="text-xs font-normal text-gray-500">/mo</span>}
                   </div>
                 </div>
               </th>
@@ -130,8 +130,8 @@ export function PlanComparison({ currentPlan, onSelectPlan }: PlanComparisonProp
         </thead>
         <tbody>
           {featureRows.map((row) => (
-            <tr key={row.key} className="border-t border-slate-700/50">
-              <td className="p-3 text-slate-300">{row.label}</td>
+            <tr key={row.key} className="border-t border-gray-200">
+              <td className="p-3 text-gray-700">{row.label}</td>
               {plans.map((plan) => {
                 const value = plan.features[row.key];
                 return (
@@ -140,17 +140,17 @@ export function PlanComparison({ currentPlan, onSelectPlan }: PlanComparisonProp
                       value ? (
                         <Check className="h-4 w-4 text-green-400 mx-auto" />
                       ) : (
-                        <X className="h-4 w-4 text-slate-600 mx-auto" />
+                        <X className="h-4 w-4 text-gray-300 mx-auto" />
                       )
                     ) : (
-                      <span className="text-slate-200">{value}</span>
+                      <span className="text-gray-800">{value}</span>
                     )}
                   </td>
                 );
               })}
             </tr>
           ))}
-          <tr className="border-t border-slate-700/50">
+          <tr className="border-t border-gray-200">
             <td className="p-3" />
             {plans.map((plan) => (
               <td key={plan.tier} className="p-3 text-center">
@@ -158,7 +158,7 @@ export function PlanComparison({ currentPlan, onSelectPlan }: PlanComparisonProp
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-slate-600 text-slate-400"
+                    className="border-gray-300 text-gray-500"
                     disabled
                   >
                     Current Plan
@@ -166,7 +166,7 @@ export function PlanComparison({ currentPlan, onSelectPlan }: PlanComparisonProp
                 ) : (
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="bg-coral-500 hover:bg-coral-600 text-white"
                     onClick={() => onSelectPlan(plan.tier)}
                   >
                     {plans.findIndex((p) => p.tier === plan.tier) >

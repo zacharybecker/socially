@@ -26,10 +26,10 @@ export function StatsCard({
   const isPositive = (changePercent ?? 0) >= 0;
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card className="bg-gray-50 border-gray-200">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-1">
-          <Icon className="h-4 w-4 text-slate-400" />
+          <Icon className="h-4 w-4 text-gray-500" />
           {changePercent !== undefined && (
             <div
               className={`flex items-center gap-0.5 text-xs font-medium ${
@@ -46,8 +46,8 @@ export function StatsCard({
             </div>
           )}
         </div>
-        <p className="text-2xl font-bold text-white">{value}</p>
-        <p className="text-xs text-slate-400 mb-2">{title}</p>
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-xs text-gray-500 mb-2">{title}</p>
         {sparklineData && sparklineData.length > 1 && (
           <Sparkline data={sparklineData} color={color} height={28} />
         )}
