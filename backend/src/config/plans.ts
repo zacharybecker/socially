@@ -22,6 +22,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     stripePriceIdMonthly: "",
     stripePriceIdYearly: "",
     limits: {
+      organizations: 1,
       socialAccounts: 2,
       postsPerMonth: 10,
       aiCreditsPerMonth: 20,
@@ -51,6 +52,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     stripePriceIdMonthly: process.env.STRIPE_PRICE_CREATOR_MONTHLY || "",
     stripePriceIdYearly: process.env.STRIPE_PRICE_CREATOR_YEARLY || "",
     limits: {
+      organizations: 3,
       socialAccounts: 5,
       postsPerMonth: -1,
       aiCreditsPerMonth: 200,
@@ -83,6 +85,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     stripePriceIdMonthly: process.env.STRIPE_PRICE_BUSINESS_MONTHLY || "",
     stripePriceIdYearly: process.env.STRIPE_PRICE_BUSINESS_YEARLY || "",
     limits: {
+      organizations: 5,
       socialAccounts: 15,
       postsPerMonth: -1,
       aiCreditsPerMonth: 1000,
@@ -117,6 +120,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     stripePriceIdMonthly: process.env.STRIPE_PRICE_AGENCY_MONTHLY || "",
     stripePriceIdYearly: process.env.STRIPE_PRICE_AGENCY_YEARLY || "",
     limits: {
+      organizations: -1,
       socialAccounts: -1,
       postsPerMonth: -1,
       aiCreditsPerMonth: -1,

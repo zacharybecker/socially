@@ -22,11 +22,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
   Sheet,
   SheetContent,
   SheetTitle,
 } from "@/components/ui/sheet";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { toast } from "sonner";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -55,7 +66,26 @@ const navigation = [
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user, userProfile, signOut } = useAuth();
-  const { organizations, currentOrganization, setCurrentOrganization } = useOrganization();
+  const { organizations, currentOrganization, setCurrentOrganization, createOrganization } = useOrganization();
+  const [createOrgOpen, setCreateOrgOpen] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [creatingOrg, setCreatingOrg] = useState(false);
+
+  const handleCreateOrg = async () => {
+    if (!newOrgName.trim()) return;
+    setCreatingOrg(true);
+    try {
+      await createOrganization(newOrgName.trim());
+      setNewOrgName("");
+      setCreateOrgOpen(false);
+      toast.success("Organization created");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || "Failed to create organization");
+    } finally {
+      setCreatingOrg(false);
+    }
+  };
 
   const getInitials = (name: string | null) => {
     if (!name) return "U";
@@ -78,7 +108,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Organization Selector */}
-      <div className="px-4 py-4 border-b border-gray-200">
+      <div className="px-4 py-4 border-b border-gray-200 space-y-2">
         <Select
           value={currentOrganization?.id || ""}
           onValueChange={(value) => {
@@ -101,6 +131,53 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          onClick={() => setCreateOrgOpen(true)}
+        >
+          <Plus className="mr-2 h-3.5 w-3.5" />
+          Create Organization
+        </Button>
+        <Dialog open={createOrgOpen} onOpenChange={setCreateOrgOpen}>
+          <DialogContent className="bg-white border-gray-200">
+            <DialogHeader>
+              <DialogTitle className="text-gray-900">Create Organization</DialogTitle>
+              <DialogDescription className="text-gray-500">
+                Enter a name for your new organization.
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              value={newOrgName}
+              onChange={(e) => setNewOrgName(e.target.value)}
+              placeholder="Organization name"
+              className="bg-gray-50 border-gray-300 text-gray-900"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleCreateOrg();
+                }
+              }}
+            />
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setCreateOrgOpen(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateOrg}
+                disabled={creatingOrg || !newOrgName.trim()}
+                className="bg-coral-500 hover:bg-coral-600"
+              >
+                {creatingOrg ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Navigation */}

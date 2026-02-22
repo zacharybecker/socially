@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/dashboard/header";
 import { useAuth, useOrganization } from "@/lib/hooks";
 import { api, endpoints } from "@/lib/api";
@@ -17,12 +17,19 @@ import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { userProfile, updateUserProfile, resetPassword } = useAuth();
-  const { currentOrganization, updateOrganization } = useOrganization();
+  const { currentOrganization, updateOrganization, createOrganization, organizations } = useOrganization();
 
   const [displayName, setDisplayName] = useState(userProfile?.displayName || "");
   const [orgName, setOrgName] = useState(currentOrganization?.name || "");
   const [saving, setSaving] = useState(false);
+  const [creatingOrg, setCreatingOrg] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync orgName when currentOrganization changes
+  useEffect(() => {
+    setOrgName(currentOrganization?.name || "");
+  }, [currentOrganization]);
 
   // Brand Voice state
   const [brandGuidelines, setBrandGuidelines] = useState("");
@@ -44,6 +51,21 @@ export default function SettingsPage() {
       toast.error("Failed to update profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreateOrganization = async () => {
+    if (!newOrgName.trim()) return;
+    setCreatingOrg(true);
+    try {
+      await createOrganization(newOrgName.trim());
+      setNewOrgName("");
+      toast.success("Organization created");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || "Failed to create organization");
+    } finally {
+      setCreatingOrg(false);
     }
   };
 
@@ -274,44 +296,80 @@ export default function SettingsPage() {
 
           {/* Organization Tab */}
           <TabsContent value="organization">
-            <Card className="bg-gray-50 border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-gray-900">Organization Settings</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Manage your organization details
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-gray-800">Organization Name</Label>
-                  <Input
-                    value={orgName}
-                    onChange={(e) => setOrgName(e.target.value)}
-                    className="bg-gray-100 border-gray-300 text-gray-900 max-w-md"
-                  />
-                </div>
+            {!currentOrganization ? (
+              <Card className="bg-gray-50 border-gray-200">
+                <CardHeader>
+                  <CardTitle className="text-gray-900">Create Your Organization</CardTitle>
+                  <CardDescription className="text-gray-500">
+                    Get started by creating your first organization
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-gray-800">Organization Name</Label>
+                    <Input
+                      value={newOrgName}
+                      onChange={(e) => setNewOrgName(e.target.value)}
+                      placeholder="Enter your organization name"
+                      className="bg-gray-100 border-gray-300 text-gray-900 max-w-md"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleCreateOrganization();
+                        }
+                      }}
+                    />
+                  </div>
 
-                <Button
-                  onClick={handleSaveOrganization}
-                  disabled={saving || !currentOrganization}
-                  className="bg-coral-500 hover:bg-coral-600"
-                >
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
-
-                <Separator className="bg-gray-200" />
-
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-4">Team Members</h4>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Team management is available on Business and Agency plans.
-                  </p>
-                  <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-200" disabled>
-                    Invite Team Member
+                  <Button
+                    onClick={handleCreateOrganization}
+                    disabled={creatingOrg || !newOrgName.trim()}
+                    className="bg-coral-500 hover:bg-coral-600"
+                  >
+                    {creatingOrg ? "Creating..." : "Create Organization"}
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-gray-50 border-gray-200">
+                <CardHeader>
+                  <CardTitle className="text-gray-900">Organization Settings</CardTitle>
+                  <CardDescription className="text-gray-500">
+                    Manage your organization details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-gray-800">Organization Name</Label>
+                    <Input
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      className="bg-gray-100 border-gray-300 text-gray-900 max-w-md"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSaveOrganization}
+                    disabled={saving || !currentOrganization}
+                    className="bg-coral-500 hover:bg-coral-600"
+                  >
+                    {saving ? "Saving..." : "Save Changes"}
+                  </Button>
+
+                  <Separator className="bg-gray-200" />
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-4">Team Members</h4>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Team management is available on Business and Agency plans.
+                    </p>
+                    <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-200" disabled>
+                      Invite Team Member
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Billing Tab */}
