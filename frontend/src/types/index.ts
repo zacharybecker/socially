@@ -25,6 +25,7 @@ export type SubscriptionStatus =
 
 // Plan limits
 export interface PlanLimits {
+  organizations: number;
   socialAccounts: number;
   postsPerMonth: number;
   aiCreditsPerMonth: number;

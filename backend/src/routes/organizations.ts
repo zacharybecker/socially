@@ -4,8 +4,9 @@ import { authenticate } from "../middleware/auth.js";
 import { validateBody } from "../middleware/validation.js";
 import { db } from "../services/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
-import { Organization } from "../types/index.js";
+import { Organization, PlanTier } from "../types/index.js";
 import { createError } from "../middleware/errorHandler.js";
+import { getPlanLimits } from "../config/plans.js";
 
 const organizationSchema = z.object({
   name: z.string().min(1, "Organization name is required").max(100).transform((s) => s.trim()),
@@ -60,6 +61,24 @@ export async function organizationRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.uid;
       const { name } = validateBody(organizationSchema, request.body);
+
+      // Enforce org limit based on user's plan tier
+      const userDoc = await db.user(userId).get();
+      const planTier: PlanTier = (userDoc.data()?.planTier as PlanTier) || "free";
+      const limits = getPlanLimits(planTier);
+
+      if (limits.organizations !== -1) {
+        const ownedOrgs = await db.organizations()
+          .where("ownerId", "==", userId)
+          .get();
+
+        if (ownedOrgs.size >= limits.organizations) {
+          throw createError(
+            `You have reached the maximum number of organizations (${limits.organizations}) for your ${planTier} plan. Please upgrade to create more.`,
+            403
+          );
+        }
+      }
 
       const orgData: Omit<Organization, "id"> = {
         name,
