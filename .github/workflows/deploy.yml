@@ -51,8 +51,15 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
-          echo "TODO: Configure Cloud Run deployment"
-          echo "gcloud run deploy socially-api --source backend/ --region us-central1"
+          gcloud run deploy socially-api \
+            --source . \
+            --region us-central1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 3001 \
+            --memory 512Mi \
+            --min-instances 0 \
+            --max-instances 10
 
   deploy-firebase-rules:
     name: Deploy Firebase Rules

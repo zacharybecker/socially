@@ -43,7 +43,7 @@ import { getTwitterAuthUrl, exchangeTwitterCode, refreshTwitterToken } from "../
 import { getFacebookAuthUrl, exchangeFacebookCode, refreshFacebookToken } from "../services/facebook.js";
 import { getLinkedInAuthUrl, exchangeLinkedInCode, refreshLinkedInToken } from "../services/linkedin.js";
 import { getThreadsAuthUrl, exchangeThreadsCode, refreshThreadsToken } from "../services/threads.js";
-import { getPinterestAuthUrl, exchangePinterestCode, refreshPinterestToken } from "../services/pinterest.js";
+import { getPinterestAuthUrl, exchangePinterestCode, refreshPinterestToken, getPinterestBoards } from "../services/pinterest.js";
 
 export async function accountRoutes(fastify: FastifyInstance) {
   // List connected accounts
@@ -392,6 +392,34 @@ export async function accountRoutes(fastify: FastifyInstance) {
           connectedAt: accountData.connectedAt.toDate(),
           lastSyncAt: new Date(),
         },
+      });
+    }
+  );
+
+  // Get Pinterest boards for account
+  fastify.get<{
+    Params: { orgId: string; accountId: string };
+  }>(
+    "/:accountId/boards",
+    { preHandler: [authenticate, requireOrgMembership] },
+    async (request, reply) => {
+      const { orgId, accountId } = request.params;
+
+      const accountDoc = await db.socialAccount(orgId, accountId).get();
+      if (!accountDoc.exists) {
+        throw createError("Account not found", 404);
+      }
+
+      const account = accountDoc.data() as SocialAccount;
+      if (account.platform !== "pinterest") {
+        throw createError("Board listing is only available for Pinterest accounts", 400);
+      }
+
+      const boards = await getPinterestBoards(account.accessToken);
+
+      return reply.send({
+        success: true,
+        data: boards,
       });
     }
   );

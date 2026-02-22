@@ -11,6 +11,12 @@ import {
 } from "../types/index.js";
 import { getTikTokVideoMetrics, getTikTokUserMetrics } from "./tiktok.js";
 import { getInstagramInsights, getInstagramAccountInsights } from "./instagram.js";
+import { getYouTubeVideoMetrics } from "./youtube.js";
+import { getTwitterTweetMetrics } from "./twitter.js";
+import { getFacebookPostInsights } from "./facebook.js";
+import { getLinkedInPostMetrics } from "./linkedin.js";
+import { getThreadsPostMetrics } from "./threads.js";
+import { getPinterestPinMetrics } from "./pinterest.js";
 
 function emptyPlatformBreakdown(): PlatformBreakdown {
   return {
@@ -83,6 +89,41 @@ export async function syncAccountAnalytics(
       reach: accountInsights.reach,
       followers: accountInsights.followerCount,
     };
+  } else if (account.platform === "twitter") {
+    try {
+      const response = await (await import("axios")).default.get(
+        "https://api.twitter.com/2/users/me",
+        {
+          headers: { Authorization: `Bearer ${account.accessToken}` },
+          params: { "user.fields": "public_metrics" },
+        }
+      );
+      const publicMetrics = response.data?.data?.public_metrics;
+      if (publicMetrics) {
+        metrics = {
+          followers: publicMetrics.followers_count || 0,
+        };
+      }
+    } catch (error) {
+      // Graceful fallback - continue with empty metrics
+    }
+  } else if (account.platform === "facebook") {
+    try {
+      const response = await (await import("axios")).default.get(
+        `https://graph.facebook.com/v18.0/${account.platformUserId}`,
+        {
+          headers: { Authorization: `Bearer ${account.accessToken}` },
+          params: { fields: "followers_count" },
+        }
+      );
+      if (response.data) {
+        metrics = {
+          followers: response.data.followers_count || 0,
+        };
+      }
+    } catch (error) {
+      // Graceful fallback - continue with empty metrics
+    }
   }
 
   // Get previous snapshot to compute follower change
@@ -187,6 +228,120 @@ export async function syncPostAnalytics(
         videoViews: mediaMetrics.videoViews,
         engagements: mediaMetrics.engagements,
       };
+    } else if (account.platform === "youtube") {
+      try {
+        const videoMetrics = await getYouTubeVideoMetrics(
+          account.accessToken,
+          platformEntry.platformPostId
+        );
+        snapshot = {
+          impressions: videoMetrics.views,
+          reach: videoMetrics.views,
+          likes: videoMetrics.likes,
+          comments: videoMetrics.comments,
+          shares: 0,
+          saves: 0,
+          videoViews: videoMetrics.views,
+          engagements: videoMetrics.likes + videoMetrics.comments,
+        };
+      } catch (error) {
+        // Graceful fallback - continue with empty metrics
+      }
+    } else if (account.platform === "twitter") {
+      try {
+        const tweetMetrics = await getTwitterTweetMetrics(
+          account.accessToken,
+          platformEntry.platformPostId
+        );
+        snapshot = {
+          impressions: tweetMetrics.impressions,
+          reach: tweetMetrics.impressions,
+          likes: tweetMetrics.likes,
+          comments: tweetMetrics.replies,
+          shares: tweetMetrics.retweets,
+          saves: 0,
+          videoViews: 0,
+          engagements: tweetMetrics.likes + tweetMetrics.replies + tweetMetrics.retweets,
+        };
+      } catch (error) {
+        // Graceful fallback
+      }
+    } else if (account.platform === "facebook") {
+      try {
+        const fbMetrics = await getFacebookPostInsights(
+          account.accessToken,
+          platformEntry.platformPostId
+        );
+        snapshot = {
+          impressions: fbMetrics.impressions,
+          reach: fbMetrics.reach,
+          likes: fbMetrics.likes,
+          comments: fbMetrics.comments,
+          shares: fbMetrics.shares,
+          saves: 0,
+          videoViews: 0,
+          engagements: fbMetrics.engagements,
+        };
+      } catch (error) {
+        // Graceful fallback
+      }
+    } else if (account.platform === "linkedin") {
+      try {
+        const liMetrics = await getLinkedInPostMetrics(
+          account.accessToken,
+          platformEntry.platformPostId
+        );
+        snapshot = {
+          impressions: liMetrics.impressions,
+          reach: liMetrics.impressions,
+          likes: liMetrics.likes,
+          comments: liMetrics.comments,
+          shares: liMetrics.shares,
+          saves: 0,
+          videoViews: 0,
+          engagements: liMetrics.likes + liMetrics.comments + liMetrics.shares + (liMetrics.clicks || 0),
+        };
+      } catch (error) {
+        // Graceful fallback
+      }
+    } else if (account.platform === "threads") {
+      try {
+        const threadMetrics = await getThreadsPostMetrics(
+          account.accessToken,
+          platformEntry.platformPostId
+        );
+        snapshot = {
+          impressions: threadMetrics.views,
+          reach: threadMetrics.views,
+          likes: threadMetrics.likes,
+          comments: threadMetrics.replies,
+          shares: threadMetrics.reposts + threadMetrics.quotes,
+          saves: 0,
+          videoViews: 0,
+          engagements: threadMetrics.likes + threadMetrics.replies + threadMetrics.reposts + threadMetrics.quotes,
+        };
+      } catch (error) {
+        // Graceful fallback
+      }
+    } else if (account.platform === "pinterest") {
+      try {
+        const pinMetrics = await getPinterestPinMetrics(
+          account.accessToken,
+          platformEntry.platformPostId
+        );
+        snapshot = {
+          impressions: pinMetrics.impressions,
+          reach: pinMetrics.impressions,
+          likes: 0,
+          comments: pinMetrics.comments,
+          shares: 0,
+          saves: pinMetrics.saves,
+          videoViews: 0,
+          engagements: pinMetrics.saves + pinMetrics.clicks + pinMetrics.comments,
+        };
+      } catch (error) {
+        // Graceful fallback
+      }
     }
 
     const totalEngagements =

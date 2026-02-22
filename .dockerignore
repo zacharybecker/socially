@@ -1,0 +1,22 @@
+# Dependencies
+**/node_modules
+
+# Build outputs
+frontend/.next
+backend/dist
+
+# Version control
+.git
+.github
+
+# Environment files
+.env*
+**/.env*
+
+# IDE
+.vscode
+.idea
+
+# OS files
+.DS_Store
+Thumbs.db

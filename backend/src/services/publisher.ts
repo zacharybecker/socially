@@ -170,9 +170,18 @@ const publishers: Record<Platform, PlatformPublisher> = {
       if (post.mediaUrls.length === 0) {
         throw new Error("Pinterest requires an image");
       }
+      const pinterestPlatform = post.platforms.find(
+        (p) => p.accountId === _account.id
+      );
+      const boardId = pinterestPlatform?.metadata?.pinterestBoardId as string | undefined;
+      if (!boardId) {
+        throw new Error(
+          "Pinterest requires a board to be selected. Please edit the post and choose a Pinterest board."
+        );
+      }
       const result = await publishToPinterest(
         accessToken,
-        "", // boardId would need to be specified by the user
+        boardId,
         post.content.substring(0, 100),
         post.content,
         post.mediaUrls[0]

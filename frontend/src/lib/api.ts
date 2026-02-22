@@ -88,6 +88,7 @@ export const endpoints = {
     callback: (orgId: string, platform: string) => `/organizations/${orgId}/accounts/callback/${platform}`,
     disconnect: (orgId: string, accountId: string) => `/organizations/${orgId}/accounts/${accountId}`,
     refresh: (orgId: string, accountId: string) => `/organizations/${orgId}/accounts/${accountId}/refresh`,
+    boards: (orgId: string, accountId: string) => `/organizations/${orgId}/accounts/${accountId}/boards`,
   },
   // Posts
   posts: {
