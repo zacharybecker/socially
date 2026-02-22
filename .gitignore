@@ -50,3 +50,5 @@ coverage/
 .vercel
 .turbo
 *.local
+.cursor
+.claude
