@@ -79,7 +79,7 @@ export function PlatformIcon({ platform, size = 32, className = "" }: PlatformIc
         ...style.style,
       }}
     >
-      <div style={{ width: size - padding * 2, height: size - padding * 2 }}>{icon}</div>
+      <div className="flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:block" style={{ width: size - padding * 2, height: size - padding * 2 }}>{icon}</div>
     </div>
   );
 }
