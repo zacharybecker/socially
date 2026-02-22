@@ -52,16 +52,16 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         onChange(range, start, end);
       }}
     >
-      <SelectTrigger className="w-[180px] bg-slate-800 border-slate-700 text-white">
-        <CalendarIcon className="h-4 w-4 text-slate-400 mr-2" />
+      <SelectTrigger className="w-[180px] bg-white border-gray-200 text-gray-900">
+        <CalendarIcon className="h-4 w-4 text-gray-500 mr-2" />
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="bg-slate-800 border-slate-700">
+      <SelectContent className="bg-white border-gray-200">
         {PRESETS.map((preset) => (
           <SelectItem
             key={preset.value}
             value={preset.value}
-            className="text-slate-300 focus:bg-slate-700 focus:text-white"
+            className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
           >
             {preset.label}
           </SelectItem>

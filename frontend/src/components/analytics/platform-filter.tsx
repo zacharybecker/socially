@@ -46,12 +46,12 @@ export function PlatformFilter({ selected, onChange }: PlatformFilterProps) {
         <Button
           variant="outline"
           size="sm"
-          className="bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"
+          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
         >
           <Filter className="h-4 w-4 mr-1.5" />
           Platforms
           {!allSelected && selected.length > 0 && (
-            <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white">
+            <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-coral-500 text-[10px] text-white">
               {selected.length}
             </span>
           )}
@@ -59,18 +59,18 @@ export function PlatformFilter({ selected, onChange }: PlatformFilterProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-48 bg-slate-800 border-slate-700"
+        className="w-48 bg-white border-gray-200"
       >
-        <DropdownMenuLabel className="text-slate-400 text-xs">
+        <DropdownMenuLabel className="text-gray-500 text-xs">
           Filter by Platform
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-slate-700" />
+        <DropdownMenuSeparator className="bg-gray-200" />
         {PLATFORMS.map((platform) => (
           <DropdownMenuCheckboxItem
             key={platform.value}
             checked={allSelected || selected.includes(platform.value)}
             onCheckedChange={() => togglePlatform(platform.value)}
-            className="text-slate-300 focus:bg-slate-700 focus:text-white"
+            className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
           >
             <div className="flex items-center gap-2">
               <div

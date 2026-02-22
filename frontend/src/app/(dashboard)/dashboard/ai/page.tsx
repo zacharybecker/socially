@@ -167,20 +167,20 @@ export default function AIStudioPage() {
 
       <div className="p-6">
         <Tabs defaultValue="hooks">
-          <TabsList className="bg-slate-800 border-slate-700 mb-6">
-            <TabsTrigger value="hooks" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+          <TabsList className="bg-gray-50 border-gray-200 mb-6">
+            <TabsTrigger value="hooks" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <Sparkles className="h-4 w-4" />
               Hooks
             </TabsTrigger>
-            <TabsTrigger value="captions" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+            <TabsTrigger value="captions" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <MessageSquare className="h-4 w-4" />
               Captions
             </TabsTrigger>
-            <TabsTrigger value="ideas" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+            <TabsTrigger value="ideas" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <Lightbulb className="h-4 w-4" />
               Ideas
             </TabsTrigger>
-            <TabsTrigger value="scripts" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+            <TabsTrigger value="scripts" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <Video className="h-4 w-4" />
               Scripts
             </TabsTrigger>
@@ -189,41 +189,41 @@ export default function AIStudioPage() {
           {/* Hooks Tab */}
           <TabsContent value="hooks">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Generate Hooks</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Generate Hooks</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Create attention-grabbing opening lines
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Topic</Label>
+                    <Label className="text-gray-800">Topic</Label>
                     <Input
                       placeholder="e.g., productivity, fitness, cooking..."
                       value={hookTopic}
                       onChange={(e) => setHookTopic(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Tone</Label>
+                    <Label className="text-gray-800">Tone</Label>
                     <Select value={hookTone} onValueChange={setHookTone}>
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                      <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="casual" className="text-white">Casual</SelectItem>
-                        <SelectItem value="professional" className="text-white">Professional</SelectItem>
-                        <SelectItem value="humorous" className="text-white">Humorous</SelectItem>
-                        <SelectItem value="dramatic" className="text-white">Dramatic</SelectItem>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="casual" className="text-gray-900">Casual</SelectItem>
+                        <SelectItem value="professional" className="text-gray-900">Professional</SelectItem>
+                        <SelectItem value="humorous" className="text-gray-900">Humorous</SelectItem>
+                        <SelectItem value="dramatic" className="text-gray-900">Dramatic</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <Button
                     onClick={generateHooks}
                     disabled={hookLoading}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="w-full bg-coral-500 hover:bg-coral-600"
                   >
                     {hookLoading ? (
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -235,16 +235,16 @@ export default function AIStudioPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Generated Hooks</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Generated Hooks</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Click to copy any hook
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {hooks.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">
+                    <div className="text-center py-8 text-gray-500">
                       <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your generated hooks will appear here</p>
                       {hookError && <p className="text-sm text-rose-400 mt-2">{hookError}</p>}
@@ -254,15 +254,15 @@ export default function AIStudioPage() {
                       {hooks.map((hook, index) => (
                         <div
                           key={index}
-                          className="p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 cursor-pointer group"
+                          className="p-3 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer group"
                           onClick={() => handleCopy(hook, index)}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm text-white">{hook}</p>
+                            <p className="text-sm text-gray-900">{hook}</p>
                             {copiedIndex === index ? (
                               <Check className="h-4 w-4 text-green-400 flex-shrink-0" />
                             ) : (
-                              <Copy className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100 flex-shrink-0" />
+                              <Copy className="h-4 w-4 text-gray-500 opacity-0 group-hover:opacity-100 flex-shrink-0" />
                             )}
                           </div>
                         </div>
@@ -277,46 +277,46 @@ export default function AIStudioPage() {
           {/* Captions Tab */}
           <TabsContent value="captions">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Generate Captions</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Generate Captions</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Create engaging captions with hashtags
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Topic</Label>
+                    <Label className="text-gray-800">Topic</Label>
                     <Input
                       placeholder="What is your post about?"
                       value={captionTopic}
                       onChange={(e) => setCaptionTopic(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-slate-200">Platform</Label>
+                      <Label className="text-gray-800">Platform</Label>
                       <Select value={captionPlatform} onValueChange={setCaptionPlatform}>
-                        <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                        <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          <SelectItem value="instagram" className="text-white">Instagram</SelectItem>
-                          <SelectItem value="tiktok" className="text-white">TikTok</SelectItem>
+                        <SelectContent className="bg-white border-gray-200">
+                          <SelectItem value="instagram" className="text-gray-900">Instagram</SelectItem>
+                          <SelectItem value="tiktok" className="text-gray-900">TikTok</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-slate-200">Tone</Label>
+                      <Label className="text-gray-800">Tone</Label>
                       <Select value={captionTone} onValueChange={setCaptionTone}>
-                        <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                        <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          <SelectItem value="casual" className="text-white">Casual</SelectItem>
-                          <SelectItem value="professional" className="text-white">Professional</SelectItem>
-                          <SelectItem value="humorous" className="text-white">Humorous</SelectItem>
+                        <SelectContent className="bg-white border-gray-200">
+                          <SelectItem value="casual" className="text-gray-900">Casual</SelectItem>
+                          <SelectItem value="professional" className="text-gray-900">Professional</SelectItem>
+                          <SelectItem value="humorous" className="text-gray-900">Humorous</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -324,7 +324,7 @@ export default function AIStudioPage() {
                   <Button
                     onClick={generateCaptions}
                     disabled={captionLoading}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="w-full bg-coral-500 hover:bg-coral-600"
                   >
                     {captionLoading ? (
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -336,13 +336,13 @@ export default function AIStudioPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Generated Captions</CardTitle>
+                  <CardTitle className="text-gray-900">Generated Captions</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {captions.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">
+                    <div className="text-center py-8 text-gray-500">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your generated captions will appear here</p>
                       {captionError && <p className="text-sm text-rose-400 mt-2">{captionError}</p>}
@@ -352,15 +352,15 @@ export default function AIStudioPage() {
                       {captions.map((caption, index) => (
                         <div
                           key={index}
-                          className="p-4 rounded-lg bg-slate-700/50 hover:bg-slate-700 cursor-pointer group"
+                          className="p-4 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer group"
                           onClick={() => handleCopy(caption, index + 100)}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm text-white whitespace-pre-wrap">{caption}</p>
+                            <p className="text-sm text-gray-900 whitespace-pre-wrap">{caption}</p>
                             {copiedIndex === index + 100 ? (
                               <Check className="h-4 w-4 text-green-400 flex-shrink-0" />
                             ) : (
-                              <Copy className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100 flex-shrink-0" />
+                              <Copy className="h-4 w-4 text-gray-500 opacity-0 group-hover:opacity-100 flex-shrink-0" />
                             )}
                           </div>
                         </div>
@@ -375,27 +375,27 @@ export default function AIStudioPage() {
           {/* Ideas Tab */}
           <TabsContent value="ideas">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Generate Content Ideas</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Generate Content Ideas</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Get inspiration for your next video
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Your Niche</Label>
+                    <Label className="text-gray-800">Your Niche</Label>
                     <Input
                       placeholder="e.g., tech reviews, fitness, cooking..."
                       value={ideaNiche}
                       onChange={(e) => setIdeaNiche(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                     />
                   </div>
                   <Button
                     onClick={generateIdeas}
                     disabled={ideaLoading}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="w-full bg-coral-500 hover:bg-coral-600"
                   >
                     {ideaLoading ? (
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -407,13 +407,13 @@ export default function AIStudioPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Content Ideas</CardTitle>
+                  <CardTitle className="text-gray-900">Content Ideas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {ideas.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">
+                    <div className="text-center py-8 text-gray-500">
                       <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your content ideas will appear here</p>
                       {ideaError && <p className="text-sm text-rose-400 mt-2">{ideaError}</p>}
@@ -423,17 +423,17 @@ export default function AIStudioPage() {
                       {ideas.map((idea, index) => (
                         <div
                           key={index}
-                          className="p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 cursor-pointer group flex items-center justify-between"
+                          className="p-3 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer group flex items-center justify-between"
                           onClick={() => handleCopy(idea, index + 200)}
                         >
                           <div className="flex items-center gap-3">
-                            <Badge className="bg-blue-600/20 text-blue-400">{index + 1}</Badge>
-                            <p className="text-sm text-white">{idea}</p>
+                            <Badge className="bg-coral-500/10 text-coral-500">{index + 1}</Badge>
+                            <p className="text-sm text-gray-900">{idea}</p>
                           </div>
                           {copiedIndex === index + 200 ? (
                             <Check className="h-4 w-4 text-green-400" />
                           ) : (
-                            <Copy className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100" />
+                            <Copy className="h-4 w-4 text-gray-500 opacity-0 group-hover:opacity-100" />
                           )}
                         </div>
                       ))}
@@ -447,41 +447,41 @@ export default function AIStudioPage() {
           {/* Scripts Tab */}
           <TabsContent value="scripts">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Generate Video Script</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Generate Video Script</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Create a structured script for your video
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Topic</Label>
+                    <Label className="text-gray-800">Topic</Label>
                     <Input
                       placeholder="What is your video about?"
                       value={scriptTopic}
                       onChange={(e) => setScriptTopic(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Duration</Label>
+                    <Label className="text-gray-800">Duration</Label>
                     <Select value={scriptDuration} onValueChange={setScriptDuration}>
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                      <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="15s" className="text-white">15 seconds</SelectItem>
-                        <SelectItem value="30s" className="text-white">30 seconds</SelectItem>
-                        <SelectItem value="60s" className="text-white">60 seconds</SelectItem>
-                        <SelectItem value="90s" className="text-white">90 seconds</SelectItem>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="15s" className="text-gray-900">15 seconds</SelectItem>
+                        <SelectItem value="30s" className="text-gray-900">30 seconds</SelectItem>
+                        <SelectItem value="60s" className="text-gray-900">60 seconds</SelectItem>
+                        <SelectItem value="90s" className="text-gray-900">90 seconds</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <Button
                     onClick={generateScript}
                     disabled={scriptLoading}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="w-full bg-coral-500 hover:bg-coral-600"
                   >
                     {scriptLoading ? (
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -493,12 +493,12 @@ export default function AIStudioPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-white">Generated Script</CardTitle>
-                      <CardDescription className="text-slate-400">
+                      <CardTitle className="text-gray-900">Generated Script</CardTitle>
+                      <CardDescription className="text-gray-500">
                         Your video script with timestamps
                       </CardDescription>
                     </div>
@@ -507,7 +507,7 @@ export default function AIStudioPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleCopy(script, 300)}
-                        className="text-slate-400 hover:text-white"
+                        className="text-gray-500 hover:text-gray-900"
                       >
                         {copiedIndex === 300 ? (
                           <Check className="h-4 w-4" />
@@ -520,7 +520,7 @@ export default function AIStudioPage() {
                 </CardHeader>
                 <CardContent>
                   {!script ? (
-                    <div className="text-center py-8 text-slate-400">
+                    <div className="text-center py-8 text-gray-500">
                       <Video className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Your script will appear here</p>
                       {scriptError && <p className="text-sm text-rose-400 mt-2">{scriptError}</p>}
@@ -529,7 +529,7 @@ export default function AIStudioPage() {
                     <Textarea
                       value={script}
                       readOnly
-                      className="min-h-64 bg-slate-700/50 border-slate-600 text-white font-mono text-sm"
+                      className="min-h-64 bg-gray-100 border-gray-300 text-gray-900 font-mono text-sm"
                     />
                   )}
                 </CardContent>

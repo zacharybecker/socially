@@ -141,24 +141,24 @@ export default function SettingsPage() {
 
       <div className="p-6">
         <Tabs defaultValue="profile">
-          <TabsList className="bg-slate-800 border-slate-700 mb-6">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+          <TabsList className="bg-gray-50 border-gray-200 mb-6">
+            <TabsTrigger value="profile" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <User className="h-4 w-4" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="organization" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+            <TabsTrigger value="organization" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <Building2 className="h-4 w-4" />
               Organization
             </TabsTrigger>
-            <TabsTrigger value="billing" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+            <TabsTrigger value="billing" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <CreditCard className="h-4 w-4" />
               Billing
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
-            <TabsTrigger value="brand-voice" className="data-[state=active]:bg-slate-700 text-slate-300 gap-2">
+            <TabsTrigger value="brand-voice" className="data-[state=active]:bg-gray-200 text-gray-700 gap-2">
               <Sparkles className="h-4 w-4" />
               Brand Voice
             </TabsTrigger>
@@ -167,10 +167,10 @@ export default function SettingsPage() {
           {/* Profile Tab */}
           <TabsContent value="profile">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Profile Information</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Profile Information</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Update your personal details
                   </CardDescription>
                 </CardHeader>
@@ -178,7 +178,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
                       <AvatarImage src={userProfile?.photoURL || undefined} />
-                      <AvatarFallback className="bg-slate-700 text-white text-xl">
+                      <AvatarFallback className="bg-gray-200 text-gray-900 text-xl">
                         {userProfile?.displayName?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                        className="border-gray-300 text-gray-700 hover:bg-gray-200"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         Change Photo
@@ -202,68 +202,68 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Display Name</Label>
+                    <Label className="text-gray-800">Display Name</Label>
                     <Input
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Email</Label>
+                    <Label className="text-gray-800">Email</Label>
                     <Input
                       value={userProfile?.email || ""}
                       disabled
-                      className="bg-slate-700/50 border-slate-600 text-slate-400"
+                      className="bg-gray-100 border-gray-300 text-gray-500"
                     />
-                    <p className="text-xs text-slate-500">Email cannot be changed</p>
+                    <p className="text-xs text-gray-400">Email cannot be changed</p>
                   </div>
 
                   <Button
                     onClick={handleSaveProfile}
                     disabled={saving}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="bg-coral-500 hover:bg-coral-600"
                   >
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Security</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Security</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Manage your account security
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-700/50">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gray-100">
                     <div className="flex items-center gap-3">
-                      <Shield className="h-5 w-5 text-slate-400" />
+                      <Shield className="h-5 w-5 text-gray-500" />
                       <div>
-                        <p className="text-sm font-medium text-white">Password</p>
-                        <p className="text-xs text-slate-400">Last changed: Never</p>
+                        <p className="text-sm font-medium text-gray-900">Password</p>
+                        <p className="text-xs text-gray-500">Last changed: Never</p>
                       </div>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-200"
                       onClick={handleChangePassword}
                     >
                       Change
                     </Button>
                   </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-700/50">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gray-100">
                     <div className="flex items-center gap-3">
-                      <Shield className="h-5 w-5 text-slate-400" />
+                      <Shield className="h-5 w-5 text-gray-500" />
                       <div>
-                        <p className="text-sm font-medium text-white">Two-Factor Auth</p>
-                        <p className="text-xs text-slate-400">Not available yet</p>
+                        <p className="text-sm font-medium text-gray-900">Two-Factor Auth</p>
+                        <p className="text-xs text-gray-500">Not available yet</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700" disabled>
+                    <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-200" disabled>
                       Enable
                     </Button>
                   </div>
@@ -274,39 +274,39 @@ export default function SettingsPage() {
 
           {/* Organization Tab */}
           <TabsContent value="organization">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-white">Organization Settings</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-gray-900">Organization Settings</CardTitle>
+                <CardDescription className="text-gray-500">
                   Manage your organization details
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-slate-200">Organization Name</Label>
+                  <Label className="text-gray-800">Organization Name</Label>
                   <Input
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    className="bg-slate-700/50 border-slate-600 text-white max-w-md"
+                    className="bg-gray-100 border-gray-300 text-gray-900 max-w-md"
                   />
                 </div>
 
                 <Button
                   onClick={handleSaveOrganization}
                   disabled={saving || !currentOrganization}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600"
+                  className="bg-coral-500 hover:bg-coral-600"
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
 
-                <Separator className="bg-slate-700" />
+                <Separator className="bg-gray-200" />
 
                 <div>
-                  <h4 className="text-sm font-medium text-white mb-4">Team Members</h4>
-                  <p className="text-sm text-slate-400 mb-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-4">Team Members</h4>
+                  <p className="text-sm text-gray-500 mb-4">
                     Team management is available on Business and Agency plans.
                   </p>
-                  <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700" disabled>
+                  <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-200" disabled>
                     Invite Team Member
                   </Button>
                 </div>
@@ -317,27 +317,27 @@ export default function SettingsPage() {
           {/* Billing Tab */}
           <TabsContent value="billing">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Current Plan</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Current Plan</CardTitle>
+                  <CardDescription className="text-gray-500">
                     You are currently on the Free plan
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-700/50 mb-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gray-100 mb-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-white">Free</h3>
-                        <Badge className="bg-slate-600">Current</Badge>
+                        <h3 className="text-lg font-semibold text-gray-900">Free</h3>
+                        <Badge className="bg-gray-300">Current</Badge>
                       </div>
-                      <p className="text-2xl font-bold text-white mt-1">$0<span className="text-sm font-normal text-slate-400">/month</span></p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">$0<span className="text-sm font-normal text-gray-500">/month</span></p>
                     </div>
                   </div>
                   <ul className="space-y-2">
                     {planFeatures.free.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm text-slate-300">
-                        <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                      <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="h-1.5 w-1.5 rounded-full bg-coral-500" />
                         {feature}
                       </li>
                     ))}
@@ -345,10 +345,10 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-white">Upgrade Your Plan</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-gray-900">Upgrade Your Plan</CardTitle>
+                  <CardDescription className="text-gray-500">
                     Get more features with a paid plan
                   </CardDescription>
                 </CardHeader>
@@ -360,15 +360,15 @@ export default function SettingsPage() {
                   ].map((plan) => (
                     <div
                       key={plan.name}
-                      className="p-4 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition-colors cursor-pointer"
+                      className="p-4 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-white">{plan.name}</h4>
-                        <span className="text-white font-bold">{plan.price}<span className="text-sm font-normal text-slate-400">/mo</span></span>
+                        <h4 className="font-medium text-gray-900">{plan.name}</h4>
+                        <span className="text-gray-900 font-bold">{plan.price}<span className="text-sm font-normal text-gray-500">/mo</span></span>
                       </div>
                       <ul className="space-y-1">
                         {plan.features.slice(0, 2).map((feature, index) => (
-                          <li key={index} className="text-xs text-slate-400">
+                          <li key={index} className="text-xs text-gray-500">
                             {feature}
                           </li>
                         ))}
@@ -376,7 +376,7 @@ export default function SettingsPage() {
                     </div>
                   ))}
                   <Button
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+                    className="w-full bg-coral-500 hover:bg-coral-600"
                     onClick={() => toast.info("Billing coming soon")}
                   >
                     Upgrade Now
@@ -388,63 +388,63 @@ export default function SettingsPage() {
 
           {/* Notifications Tab */}
           <TabsContent value="notifications">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-white">Notification Preferences</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-gray-900">Notification Preferences</CardTitle>
+                <CardDescription className="text-gray-500">
                   Choose how you want to be notified
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-400">Notification settings coming soon.</p>
+                <p className="text-gray-500">Notification settings coming soon.</p>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Brand Voice Tab */}
           <TabsContent value="brand-voice">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-400" />
+                <CardTitle className="text-gray-900 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-coral-500" />
                   Brand Voice
                 </CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardDescription className="text-gray-500">
                   Define your brand&apos;s voice to generate consistent AI content
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Guidelines */}
                 <div className="space-y-2">
-                  <Label className="text-slate-200">Brand Guidelines</Label>
+                  <Label className="text-gray-800">Brand Guidelines</Label>
                   <textarea
                     value={brandGuidelines}
                     onChange={(e) => setBrandGuidelines(e.target.value)}
                     placeholder="Describe your brand's voice, personality, and communication style..."
                     rows={4}
-                    className="w-full rounded-md bg-slate-700/50 border border-slate-600 text-white placeholder:text-slate-500 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-md bg-gray-100 border border-gray-300 text-gray-900 placeholder:text-gray-400 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-coral-500"
                   />
                 </div>
 
                 {/* Tone */}
                 <div className="space-y-2">
-                  <Label className="text-slate-200">Tone</Label>
+                  <Label className="text-gray-800">Tone</Label>
                   <Input
                     value={brandTone}
                     onChange={(e) => setBrandTone(e.target.value)}
                     placeholder="e.g., Professional yet approachable, witty, authoritative"
-                    className="bg-slate-700/50 border-slate-600 text-white"
+                    className="bg-gray-100 border-gray-300 text-gray-900"
                   />
                 </div>
 
                 {/* Key Phrases */}
                 <div className="space-y-2">
-                  <Label className="text-slate-200">Key Phrases</Label>
+                  <Label className="text-gray-800">Key Phrases</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {keyPhrases.map((phrase, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-3 py-1 text-xs text-blue-400 border border-blue-500/30"
+                        className="inline-flex items-center gap-1 rounded-full bg-coral-500/10 px-3 py-1 text-xs text-coral-500 border border-coral-500/30"
                       >
                         {phrase}
                         <button onClick={() => removeTag(i, keyPhrases, setKeyPhrases)}>
@@ -458,7 +458,7 @@ export default function SettingsPage() {
                       value={newKeyPhrase}
                       onChange={(e) => setNewKeyPhrase(e.target.value)}
                       placeholder="Add a key phrase..."
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -469,7 +469,7 @@ export default function SettingsPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700 shrink-0"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-200 shrink-0"
                       onClick={() => addTag(newKeyPhrase, setNewKeyPhrase, keyPhrases, setKeyPhrases)}
                     >
                       <Plus className="h-4 w-4" />
@@ -479,7 +479,7 @@ export default function SettingsPage() {
 
                 {/* Avoid Phrases */}
                 <div className="space-y-2">
-                  <Label className="text-slate-200">Avoid Phrases</Label>
+                  <Label className="text-gray-800">Avoid Phrases</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {avoidPhrases.map((phrase, i) => (
                       <span
@@ -498,7 +498,7 @@ export default function SettingsPage() {
                       value={newAvoidPhrase}
                       onChange={(e) => setNewAvoidPhrase(e.target.value)}
                       placeholder="Add a phrase to avoid..."
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -509,7 +509,7 @@ export default function SettingsPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700 shrink-0"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-200 shrink-0"
                       onClick={() => addTag(newAvoidPhrase, setNewAvoidPhrase, avoidPhrases, setAvoidPhrases)}
                     >
                       <Plus className="h-4 w-4" />
@@ -519,20 +519,20 @@ export default function SettingsPage() {
 
                 {/* Sample Content */}
                 <div className="space-y-2">
-                  <Label className="text-slate-200">Sample Content</Label>
-                  <p className="text-xs text-slate-500">
+                  <Label className="text-gray-800">Sample Content</Label>
+                  <p className="text-xs text-gray-400">
                     Add examples of content that represents your brand voice
                   </p>
                   <div className="space-y-2 mb-2">
                     {sampleContent.map((sample, i) => (
                       <div
                         key={i}
-                        className="flex items-start gap-2 rounded-lg bg-slate-700/30 border border-slate-700 p-3"
+                        className="flex items-start gap-2 rounded-lg bg-gray-50 border border-gray-200 p-3"
                       >
-                        <p className="text-sm text-slate-300 flex-1">{sample}</p>
+                        <p className="text-sm text-gray-700 flex-1">{sample}</p>
                         <button
                           onClick={() => removeTag(i, sampleContent, setSampleContent)}
-                          className="text-slate-500 hover:text-slate-300 shrink-0 mt-0.5"
+                          className="text-gray-400 hover:text-gray-700 shrink-0 mt-0.5"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -544,7 +544,7 @@ export default function SettingsPage() {
                       value={newSample}
                       onChange={(e) => setNewSample(e.target.value)}
                       placeholder="Paste sample content..."
-                      className="bg-slate-700/50 border-slate-600 text-white"
+                      className="bg-gray-100 border-gray-300 text-gray-900"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -555,7 +555,7 @@ export default function SettingsPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700 shrink-0"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-200 shrink-0"
                       onClick={() => addTag(newSample, setNewSample, sampleContent, setSampleContent)}
                     >
                       <Plus className="h-4 w-4" />
@@ -563,12 +563,12 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <Separator className="bg-slate-700" />
+                <Separator className="bg-gray-200" />
 
                 <Button
                   onClick={handleSaveBrandVoice}
                   disabled={savingBrandVoice || !currentOrganization}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600"
+                  className="bg-coral-500 hover:bg-coral-600"
                 >
                   {savingBrandVoice ? "Saving..." : "Save Brand Voice"}
                 </Button>

@@ -27,15 +27,15 @@ interface MetricSelectorProps {
 export function MetricSelector({ value, onChange }: MetricSelectorProps) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[160px] bg-slate-800 border-slate-700 text-white">
+      <SelectTrigger className="w-[160px] bg-white border-gray-200 text-gray-900">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="bg-slate-800 border-slate-700">
+      <SelectContent className="bg-white border-gray-200">
         {METRICS.map((metric) => (
           <SelectItem
             key={metric.value}
             value={metric.value}
-            className="text-slate-300 focus:bg-slate-700 focus:text-white"
+            className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
           >
             {metric.label}
           </SelectItem>

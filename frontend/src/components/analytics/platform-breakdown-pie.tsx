@@ -51,7 +51,7 @@ export function PlatformBreakdownPie({ data }: PlatformBreakdownPieProps) {
 
   if (pieData.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+      <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
         No platform data available
       </div>
     );
@@ -82,11 +82,11 @@ export function PlatformBreakdownPie({ data }: PlatformBreakdownPieProps) {
             if (!active || !payload?.length) return null;
             const item = payload[0];
             return (
-              <div className="rounded-lg border border-slate-700 bg-slate-800 p-3 shadow-xl">
-                <p className="text-xs font-semibold text-white">
+              <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-xl">
+                <p className="text-xs font-semibold text-gray-900">
                   {item.name}
                 </p>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-gray-700">
                   {(item.value as number).toLocaleString()} engagements
                 </p>
               </div>
@@ -97,7 +97,7 @@ export function PlatformBreakdownPie({ data }: PlatformBreakdownPieProps) {
           verticalAlign="bottom"
           height={36}
           formatter={(value) => (
-            <span className="text-xs text-slate-300">{value}</span>
+            <span className="text-xs text-gray-700">{value}</span>
           )}
         />
       </PieChart>

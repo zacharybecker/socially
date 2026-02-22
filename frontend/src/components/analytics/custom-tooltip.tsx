@@ -22,8 +22,8 @@ export function CustomTooltip({
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800 p-3 shadow-xl">
-      <p className="mb-2 text-xs font-medium text-slate-400">{label}</p>
+    <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-xl">
+      <p className="mb-2 text-xs font-medium text-gray-500">{label}</p>
       <div className="space-y-1">
         {payload.map((entry: TooltipEntry) => (
           <div key={entry.name} className="flex items-center gap-2">
@@ -31,8 +31,8 @@ export function CustomTooltip({
               className="h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-xs text-slate-300">{entry.name}:</span>
-            <span className="text-xs font-semibold text-white">
+            <span className="text-xs text-gray-700">{entry.name}:</span>
+            <span className="text-xs font-semibold text-gray-900">
               {formatValue
                 ? formatValue(entry.value, entry.name)
                 : entry.value.toLocaleString()}

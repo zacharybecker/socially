@@ -78,8 +78,8 @@ export function EngagementLineChart({
             onClick={() => toggleMetric(metric)}
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
               activeMetrics.has(metric)
-                ? "bg-slate-700 text-white"
-                : "bg-slate-800 text-slate-500 hover:text-slate-400"
+                ? "bg-gray-200 text-gray-900"
+                : "bg-gray-100 text-gray-500 hover:text-gray-700"
             }`}
           >
             <div
@@ -119,16 +119,16 @@ export function EngagementLineChart({
               </linearGradient>
             ))}
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="date"
-            stroke="#94a3b8"
-            tick={{ fill: "#94a3b8", fontSize: 12 }}
+            stroke="#6b7280"
+            tick={{ fill: "#6b7280", fontSize: 12 }}
             tickLine={false}
           />
           <YAxis
-            stroke="#94a3b8"
-            tick={{ fill: "#94a3b8", fontSize: 12 }}
+            stroke="#6b7280"
+            tick={{ fill: "#6b7280", fontSize: 12 }}
             tickLine={false}
             tickFormatter={(v) =>
               v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : v

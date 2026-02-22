@@ -54,42 +54,42 @@ export function CaptionVariations() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Caption Variations</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Caption Variations</CardTitle>
+          <CardDescription className="text-gray-500">
             Generate multiple caption options for your post
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-slate-200">Topic</Label>
+            <Label className="text-gray-800">Topic</Label>
             <Input
               placeholder="What is your post about?"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="bg-slate-700/50 border-slate-600 text-white"
+              className="bg-gray-100 border-gray-300 text-gray-900"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-200">Platform</Label>
+            <Label className="text-gray-800">Platform</Label>
             <Select value={platform} onValueChange={(v) => setPlatform(v as Platform)}>
-              <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+              <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="instagram" className="text-white">Instagram</SelectItem>
-                <SelectItem value="tiktok" className="text-white">TikTok</SelectItem>
-                <SelectItem value="twitter" className="text-white">Twitter / X</SelectItem>
-                <SelectItem value="facebook" className="text-white">Facebook</SelectItem>
-                <SelectItem value="linkedin" className="text-white">LinkedIn</SelectItem>
+              <SelectContent className="bg-white border-gray-200">
+                <SelectItem value="instagram" className="text-gray-900">Instagram</SelectItem>
+                <SelectItem value="tiktok" className="text-gray-900">TikTok</SelectItem>
+                <SelectItem value="twitter" className="text-gray-900">Twitter / X</SelectItem>
+                <SelectItem value="facebook" className="text-gray-900">Facebook</SelectItem>
+                <SelectItem value="linkedin" className="text-gray-900">LinkedIn</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Button
             onClick={handleGenerate}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+            className="w-full bg-coral-500 hover:bg-coral-600 text-white"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -101,16 +101,16 @@ export function CaptionVariations() {
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Variations</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Variations</CardTitle>
+          <CardDescription className="text-gray-500">
             Compare and pick your favorite
           </CardDescription>
         </CardHeader>
         <CardContent>
           {variations.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
+            <div className="text-center py-8 text-gray-500">
               <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Caption variations will appear here</p>
             </div>
@@ -119,28 +119,28 @@ export function CaptionVariations() {
               {variations.map((variation, index) => (
                 <div
                   key={index}
-                  className="p-4 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition-colors group"
+                  className="p-4 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors group"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <Badge className="bg-blue-600/20 text-blue-400 text-xs capitalize">
+                    <Badge className="bg-coral-500/10 text-coral-500 text-xs capitalize">
                       {variation.tone}
                     </Badge>
                     <button
                       onClick={() => handleCopy(variation.caption, index)}
-                      className="p-1 rounded hover:bg-slate-600 transition-colors"
+                      className="p-1 rounded hover:bg-gray-200 transition-colors"
                     >
                       {copiedIndex === index ? (
                         <Check className="h-4 w-4 text-green-400" />
                       ) : (
-                        <Copy className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100" />
+                        <Copy className="h-4 w-4 text-gray-500 opacity-0 group-hover:opacity-100" />
                       )}
                     </button>
                   </div>
-                  <p className="text-sm text-white whitespace-pre-wrap">{variation.caption}</p>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{variation.caption}</p>
                   {variation.hashtags && variation.hashtags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {variation.hashtags.map((tag) => (
-                        <span key={tag} className="text-xs text-blue-400">
+                        <span key={tag} className="text-xs text-coral-500">
                           #{tag}
                         </span>
                       ))}

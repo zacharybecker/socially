@@ -110,44 +110,44 @@ export function BrandVoiceSettings() {
   if (loadingVoice) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Brand Voice Configuration</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Brand Voice Configuration</CardTitle>
+          <CardDescription className="text-gray-500">
             Define your brand&apos;s voice and AI will match it when generating content
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label className="text-slate-200">Brand Guidelines</Label>
+            <Label className="text-gray-800">Brand Guidelines</Label>
             <Textarea
               placeholder="Describe your brand's personality, values, and communication style..."
               value={guidelines}
               onChange={(e) => setGuidelines(e.target.value)}
-              className="min-h-24 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+              className="min-h-24 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-200">Tone</Label>
+            <Label className="text-gray-800">Tone</Label>
             <Input
               placeholder="e.g., friendly, professional, witty, authoritative"
               value={tone}
               onChange={(e) => setTone(e.target.value)}
-              className="bg-slate-700/50 border-slate-600 text-white"
+              className="bg-gray-100 border-gray-300 text-gray-900"
             />
           </div>
 
           {/* Key Phrases */}
           <div className="space-y-2">
-            <Label className="text-slate-200">Key Phrases</Label>
+            <Label className="text-gray-800">Key Phrases</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Add a key phrase..."
@@ -159,12 +159,12 @@ export function BrandVoiceSettings() {
                     addTag(newKeyPhrase, keyPhrases, setKeyPhrases, () => setNewKeyPhrase(""));
                   }
                 }}
-                className="bg-slate-700/50 border-slate-600 text-white"
+                className="bg-gray-100 border-gray-300 text-gray-900"
               />
               <Button
                 variant="outline"
                 size="icon"
-                className="border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0"
+                className="border-gray-300 text-gray-700 hover:bg-gray-200 flex-shrink-0"
                 onClick={() => addTag(newKeyPhrase, keyPhrases, setKeyPhrases, () => setNewKeyPhrase(""))}
               >
                 <Plus className="h-4 w-4" />
@@ -173,7 +173,7 @@ export function BrandVoiceSettings() {
             {keyPhrases.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {keyPhrases.map((phrase) => (
-                  <Badge key={phrase} className="bg-blue-600/20 text-blue-400 gap-1">
+                  <Badge key={phrase} className="bg-coral-500/10 text-coral-500 gap-1">
                     {phrase}
                     <button onClick={() => setKeyPhrases(keyPhrases.filter((p) => p !== phrase))}>
                       <X className="h-3 w-3" />
@@ -186,7 +186,7 @@ export function BrandVoiceSettings() {
 
           {/* Avoid Phrases */}
           <div className="space-y-2">
-            <Label className="text-slate-200">Avoid Phrases</Label>
+            <Label className="text-gray-800">Avoid Phrases</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Add a phrase to avoid..."
@@ -198,12 +198,12 @@ export function BrandVoiceSettings() {
                     addTag(newAvoidPhrase, avoidPhrases, setAvoidPhrases, () => setNewAvoidPhrase(""));
                   }
                 }}
-                className="bg-slate-700/50 border-slate-600 text-white"
+                className="bg-gray-100 border-gray-300 text-gray-900"
               />
               <Button
                 variant="outline"
                 size="icon"
-                className="border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0"
+                className="border-gray-300 text-gray-700 hover:bg-gray-200 flex-shrink-0"
                 onClick={() => addTag(newAvoidPhrase, avoidPhrases, setAvoidPhrases, () => setNewAvoidPhrase(""))}
               >
                 <Plus className="h-4 w-4" />
@@ -225,7 +225,7 @@ export function BrandVoiceSettings() {
 
           {/* Sample Content */}
           <div className="space-y-2">
-            <Label className="text-slate-200">Sample Content</Label>
+            <Label className="text-gray-800">Sample Content</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Add a sample post or caption..."
@@ -237,12 +237,12 @@ export function BrandVoiceSettings() {
                     addTag(newSample, sampleContent, setSampleContent, () => setNewSample(""));
                   }
                 }}
-                className="bg-slate-700/50 border-slate-600 text-white"
+                className="bg-gray-100 border-gray-300 text-gray-900"
               />
               <Button
                 variant="outline"
                 size="icon"
-                className="border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0"
+                className="border-gray-300 text-gray-700 hover:bg-gray-200 flex-shrink-0"
                 onClick={() => addTag(newSample, sampleContent, setSampleContent, () => setNewSample(""))}
               >
                 <Plus className="h-4 w-4" />
@@ -251,13 +251,13 @@ export function BrandVoiceSettings() {
             {sampleContent.length > 0 && (
               <div className="space-y-2 mt-2">
                 {sampleContent.map((sample, i) => (
-                  <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-slate-700/50">
-                    <p className="text-sm text-slate-300 flex-1">{sample}</p>
+                  <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-gray-100">
+                    <p className="text-sm text-gray-700 flex-1">{sample}</p>
                     <button
                       onClick={() => setSampleContent(sampleContent.filter((_, idx) => idx !== i))}
-                      className="p-1 rounded hover:bg-slate-600 transition-colors flex-shrink-0"
+                      className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
                     >
-                      <X className="h-3.5 w-3.5 text-slate-400" />
+                      <X className="h-3.5 w-3.5 text-gray-500" />
                     </button>
                   </div>
                 ))}
@@ -269,7 +269,7 @@ export function BrandVoiceSettings() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-gradient-to-r from-blue-500 to-purple-600"
+              className="bg-coral-500 hover:bg-coral-600 text-white"
             >
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save Brand Voice
@@ -278,7 +278,7 @@ export function BrandVoiceSettings() {
               onClick={handleAnalyze}
               disabled={analyzing || sampleContent.length === 0}
               variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-gray-300 text-gray-700 hover:bg-gray-200"
             >
               {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Analyze Samples

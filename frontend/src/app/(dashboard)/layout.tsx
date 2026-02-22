@@ -20,10 +20,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
+      <div className="flex h-screen items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-600 border-t-blue-500" />
-          <p className="text-sm text-slate-400">Loading...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-coral-500" />
+          <p className="text-sm text-gray-500">Loading...</p>
         </div>
       </div>
     );
@@ -34,24 +34,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-slate-900">
+    <div className="flex h-screen bg-white">
       <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
 
       {/* Mobile header */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex h-14 items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 md:hidden">
+      <div className="fixed top-0 left-0 right-0 z-40 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 md:hidden">
         <Button
           variant="ghost"
           size="icon"
-          className="text-slate-300 hover:text-white hover:bg-slate-800"
+          className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
           onClick={() => setSidebarOpen(true)}
         >
           <Menu className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-coral-500">
             <Sparkles className="h-3.5 w-3.5 text-white" />
           </div>
-          <span className="text-sm font-semibold text-white">Social Manager</span>
+          <span className="text-sm font-semibold text-gray-900">Social Manager</span>
         </div>
       </div>
 

@@ -68,25 +68,25 @@ export function UpgradeDialog({ open, onOpenChange, targetPlan }: UpgradeDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-800 border-slate-700 sm:max-w-md">
+      <DialogContent className="bg-white border-gray-200 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white">
+          <DialogTitle className="text-gray-900">
             Upgrade to {plan.name}
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-gray-500">
             Unlock more features for your social media workflow
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Period toggle */}
-          <div className="flex items-center gap-2 p-1 rounded-lg bg-slate-700/50">
+          <div className="flex items-center gap-2 p-1 rounded-lg bg-gray-100">
             <button
               onClick={() => setPeriod("monthly")}
               className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 period === "monthly"
-                  ? "bg-slate-600 text-white"
-                  : "text-slate-400 hover:text-slate-300"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               Monthly
@@ -95,8 +95,8 @@ export function UpgradeDialog({ open, onOpenChange, targetPlan }: UpgradeDialogP
               onClick={() => setPeriod("yearly")}
               className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 period === "yearly"
-                  ? "bg-slate-600 text-white"
-                  : "text-slate-400 hover:text-slate-300"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               Yearly
@@ -106,16 +106,16 @@ export function UpgradeDialog({ open, onOpenChange, targetPlan }: UpgradeDialogP
 
           {/* Price */}
           <div className="text-center py-2">
-            <span className="text-4xl font-bold text-white">
+            <span className="text-4xl font-bold text-gray-900">
               ${period === "monthly" ? plan.price : yearlyPrice}
             </span>
-            <span className="text-slate-400">/{period === "monthly" ? "mo" : "yr"}</span>
+            <span className="text-gray-500">/{period === "monthly" ? "mo" : "yr"}</span>
           </div>
 
           {/* Features */}
           <ul className="space-y-2">
             {plan.highlights.map((feature) => (
-              <li key={feature} className="flex items-center gap-2 text-sm text-slate-300">
+              <li key={feature} className="flex items-center gap-2 text-sm text-gray-700">
                 <Check className="h-4 w-4 text-green-400 flex-shrink-0" />
                 {feature}
               </li>
@@ -127,14 +127,14 @@ export function UpgradeDialog({ open, onOpenChange, targetPlan }: UpgradeDialogP
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="border-gray-300 text-gray-700 hover:bg-gray-100"
           >
             Cancel
           </Button>
           <Button
             onClick={handleCheckout}
             disabled={loading}
-            className="bg-gradient-to-r from-blue-500 to-purple-600"
+            className="bg-coral-500 hover:bg-coral-600 text-white"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -88,7 +88,7 @@ export function VideoGenerator() {
       case "pending":
         return <Badge className="bg-yellow-600/20 text-yellow-400"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       case "processing":
-        return <Badge className="bg-blue-600/20 text-blue-400"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Processing</Badge>;
+        return <Badge className="bg-coral-500/10 text-coral-500"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Processing</Badge>;
       case "completed":
         return <Badge className="bg-green-600/20 text-green-400"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
       case "failed":
@@ -98,34 +98,34 @@ export function VideoGenerator() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Generate Video</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Generate Video</CardTitle>
+          <CardDescription className="text-gray-500">
             Create AI-generated videos from text prompts
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-slate-200">Prompt</Label>
+            <Label className="text-gray-800">Prompt</Label>
             <Textarea
               placeholder="Describe the video you want to create..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-24 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+              className="min-h-24 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-200">Aspect Ratio</Label>
+            <Label className="text-gray-800">Aspect Ratio</Label>
             <Select value={aspectRatio} onValueChange={setAspectRatio}>
-              <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+              <SelectTrigger className="bg-gray-100 border-gray-300 text-gray-900">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="16:9" className="text-white">16:9 (Landscape)</SelectItem>
-                <SelectItem value="9:16" className="text-white">9:16 (Portrait / Stories)</SelectItem>
-                <SelectItem value="1:1" className="text-white">1:1 (Square)</SelectItem>
+              <SelectContent className="bg-white border-gray-200">
+                <SelectItem value="16:9" className="text-gray-900">16:9 (Landscape)</SelectItem>
+                <SelectItem value="9:16" className="text-gray-900">9:16 (Portrait / Stories)</SelectItem>
+                <SelectItem value="1:1" className="text-gray-900">1:1 (Square)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -133,7 +133,7 @@ export function VideoGenerator() {
           <Button
             onClick={handleGenerate}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600"
+            className="w-full bg-coral-500 hover:bg-coral-600 text-white"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -145,30 +145,30 @@ export function VideoGenerator() {
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-gray-50 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-white">Video Jobs</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-gray-900">Video Jobs</CardTitle>
+          <CardDescription className="text-gray-500">
             Track your video generation progress
           </CardDescription>
         </CardHeader>
         <CardContent>
           {jobs.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
+            <div className="text-center py-8 text-gray-500">
               <Video className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Your video jobs will appear here</p>
             </div>
           ) : (
             <div className="space-y-4">
               {jobs.map((job) => (
-                <div key={job.id} className="p-4 rounded-lg bg-slate-700/50">
+                <div key={job.id} className="p-4 rounded-lg bg-gray-100">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     {statusBadge(job.status)}
                     {job.aspectRatio && (
-                      <span className="text-xs text-slate-400">{job.aspectRatio}</span>
+                      <span className="text-xs text-gray-500">{job.aspectRatio}</span>
                     )}
                   </div>
-                  <p className="text-sm text-slate-300 mb-2 line-clamp-2">{job.prompt}</p>
+                  <p className="text-sm text-gray-700 mb-2 line-clamp-2">{job.prompt}</p>
                   {job.status === "completed" && job.resultUrl && (
                     <video
                       src={job.resultUrl}

@@ -23,7 +23,7 @@ export function ExportDropdown() {
         <Button
           variant="outline"
           size="sm"
-          className="bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"
+          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
         >
           <Download className="h-4 w-4 mr-1.5" />
           Export
@@ -31,29 +31,29 @@ export function ExportDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-44 bg-slate-800 border-slate-700"
+        className="w-44 bg-white border-gray-200"
       >
-        <DropdownMenuLabel className="text-slate-400 text-xs">
+        <DropdownMenuLabel className="text-gray-500 text-xs">
           Export Data
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-slate-700" />
+        <DropdownMenuSeparator className="bg-gray-200" />
         <DropdownMenuItem
           onClick={() => handleExport("csv")}
-          className="text-slate-300 focus:bg-slate-700 focus:text-white"
+          className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
         >
           <FileText className="h-4 w-4 mr-2" />
           CSV
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => handleExport("excel")}
-          className="text-slate-300 focus:bg-slate-700 focus:text-white"
+          className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
         >
           <FileSpreadsheet className="h-4 w-4 mr-2" />
           Excel
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => handleExport("pdf")}
-          className="text-slate-300 focus:bg-slate-700 focus:text-white"
+          className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
         >
           <File className="h-4 w-4 mr-2" />
           PDF

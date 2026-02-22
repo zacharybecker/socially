@@ -49,26 +49,26 @@ function LoadingSkeleton() {
       {/* Stats skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} className="bg-slate-800/50 border-slate-700">
+          <Card key={i} className="bg-gray-50 border-gray-200">
             <CardContent className="p-4">
-              <div className="h-4 w-4 rounded bg-slate-700 animate-pulse mb-2" />
-              <div className="h-7 w-20 rounded bg-slate-700 animate-pulse mb-1" />
-              <div className="h-3 w-16 rounded bg-slate-700 animate-pulse mb-2" />
-              <div className="h-7 w-full rounded bg-slate-700 animate-pulse" />
+              <div className="h-4 w-4 rounded bg-gray-200 animate-pulse mb-2" />
+              <div className="h-7 w-20 rounded bg-gray-200 animate-pulse mb-1" />
+              <div className="h-3 w-16 rounded bg-gray-200 animate-pulse mb-2" />
+              <div className="h-7 w-full rounded bg-gray-200 animate-pulse" />
             </CardContent>
           </Card>
         ))}
       </div>
       {/* Charts skeleton */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 bg-slate-800/50 border-slate-700">
+        <Card className="lg:col-span-2 bg-gray-50 border-gray-200">
           <CardContent className="p-6">
-            <div className="h-[300px] rounded bg-slate-700/50 animate-pulse" />
+            <div className="h-[300px] rounded bg-gray-100 animate-pulse" />
           </CardContent>
         </Card>
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-gray-50 border-gray-200">
           <CardContent className="p-6">
-            <div className="h-[300px] rounded bg-slate-700/50 animate-pulse" />
+            <div className="h-[300px] rounded bg-gray-100 animate-pulse" />
           </CardContent>
         </Card>
       </div>
@@ -213,9 +213,9 @@ export default function AnalyticsPage() {
 
             {/* Row 2: Engagement Line Chart + Platform Breakdown Pie */}
             <div className="grid gap-6 lg:grid-cols-3">
-              <Card className="lg:col-span-2 bg-slate-800/50 border-slate-700">
+              <Card className="lg:col-span-2 bg-gray-50 border-gray-200">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-white text-base">
+                  <CardTitle className="text-gray-900 text-base">
                     Engagement Over Time
                   </CardTitle>
                 </CardHeader>
@@ -233,16 +233,16 @@ export default function AnalyticsPage() {
                       ]}
                     />
                   ) : (
-                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
                       No data available for this period
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-white text-base">
+                  <CardTitle className="text-gray-900 text-base">
                     Platform Breakdown
                   </CardTitle>
                 </CardHeader>
@@ -250,7 +250,7 @@ export default function AnalyticsPage() {
                   {dailyMetrics?.length ? (
                     <PlatformBreakdownPie data={dailyMetrics} />
                   ) : (
-                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
                       No platform data available
                     </div>
                   )}
@@ -260,9 +260,9 @@ export default function AnalyticsPage() {
 
             {/* Row 3: Follower Growth + Engagement Type Stacked */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-white text-base">
+                  <CardTitle className="text-gray-900 text-base">
                     Follower Growth
                   </CardTitle>
                 </CardHeader>
@@ -270,16 +270,16 @@ export default function AnalyticsPage() {
                   {dailyMetrics?.length ? (
                     <FollowerGrowthChart data={dailyMetrics} />
                   ) : (
-                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
                       No follower data available
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-white text-base">
+                  <CardTitle className="text-gray-900 text-base">
                     Engagement Breakdown
                   </CardTitle>
                 </CardHeader>
@@ -287,7 +287,7 @@ export default function AnalyticsPage() {
                   {dailyMetrics?.length ? (
                     <EngagementTypeStacked data={dailyMetrics} />
                   ) : (
-                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
                       No engagement data available
                     </div>
                   )}
@@ -297,30 +297,30 @@ export default function AnalyticsPage() {
 
             {/* Row 4: Top Posts + Posting Heatmap */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-white text-base">
+                  <CardTitle className="text-gray-900 text-base">
                     Top Performing Posts
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {topPostsLoading ? (
                     <div className="flex h-[300px] items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
                     </div>
                   ) : topPosts?.length ? (
                     <TopPostsHorizontalBar data={topPosts} />
                   ) : (
-                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
                       No published posts to rank
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-gray-50 border-gray-200">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-white text-base">
+                  <CardTitle className="text-gray-900 text-base">
                     Posting Activity
                   </CardTitle>
                 </CardHeader>
@@ -328,7 +328,7 @@ export default function AnalyticsPage() {
                   {dailyMetrics?.length ? (
                     <PostingHeatmap data={dailyMetrics} />
                   ) : (
-                    <div className="flex h-[300px] items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
                       No activity data available
                     </div>
                   )}

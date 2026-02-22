@@ -35,16 +35,16 @@ export function FollowerGrowthChart({ data }: FollowerGrowthChartProps) {
             <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis
           dataKey="date"
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 12 }}
           tickLine={false}
         />
         <YAxis
-          stroke="#94a3b8"
-          tick={{ fill: "#94a3b8", fontSize: 12 }}
+          stroke="#6b7280"
+          tick={{ fill: "#6b7280", fontSize: 12 }}
           tickLine={false}
           tickFormatter={(v) =>
             v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : v
