@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Header } from "@/components/dashboard/header";
 import { useOrganization } from "@/lib/hooks";
 import { createPostSchema, type CreatePostFormData } from "@/lib/schemas";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -43,6 +49,7 @@ import {
   Send,
   Save,
   Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -50,8 +57,10 @@ import { SocialAccount, Post } from "@/types";
 import { api, endpoints } from "@/lib/api";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 
-export default function NewPostPage() {
+export default function EditPostPage() {
   const router = useRouter();
+  const params = useParams();
+  const postId = params.postId as string;
   const { currentOrganization } = useOrganization();
 
   const form = useForm<CreatePostFormData>({
@@ -60,10 +69,11 @@ export default function NewPostPage() {
   });
   const contentValue = form.watch("content");
 
-  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
-  const mediaPreviewsRef = useRef(mediaPreviews);
-  mediaPreviewsRef.current = mediaPreviews;
+  const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
+  const [newMediaFiles, setNewMediaFiles] = useState<File[]>([]);
+  const [newMediaPreviews, setNewMediaPreviews] = useState<string[]>([]);
+  const newMediaPreviewsRef = useRef(newMediaPreviews);
+  newMediaPreviewsRef.current = newMediaPreviews;
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [scheduleTime, setScheduleTime] = useState("12:00");
@@ -71,17 +81,80 @@ export default function NewPostPage() {
   const [loading, setLoading] = useState(false);
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
+  const [postLoading, setPostLoading] = useState(true);
   const [pinterestBoards, setPinterestBoards] = useState<Record<string, Array<{ id: string; name: string }>>>({});
   const [selectedBoards, setSelectedBoards] = useState<Record<string, string>>({});
 
+  // Fetch existing post
+  useEffect(() => {
+    let cancelled = false;
+    const fetchPost = async () => {
+      if (!currentOrganization) return;
+      try {
+        const response = await api.get<{ success: boolean; data: Post }>(
+          endpoints.posts.get(currentOrganization.id, postId)
+        );
+        if (cancelled) return;
+        const post = response.data;
+
+        // Guard: redirect if published or publishing
+        if (post.status === "published" || post.status === "publishing") {
+          toast.warning("Published posts cannot be edited");
+          router.replace(`/dashboard/posts/${postId}`);
+          return;
+        }
+
+        // Pre-fill form
+        form.reset({ content: post.content });
+        setSelectedAccounts(post.platforms.map((p) => p.accountId));
+        setExistingMediaUrls(post.mediaUrls || []);
+
+        // Pre-fill Pinterest board selections from metadata
+        const boards: Record<string, string> = {};
+        for (const p of post.platforms) {
+          if (p.metadata?.pinterestBoardId) {
+            boards[p.accountId] = p.metadata.pinterestBoardId as string;
+          }
+        }
+        if (Object.keys(boards).length > 0) {
+          setSelectedBoards(boards);
+        }
+
+        // Pre-fill schedule
+        if (post.scheduledAt) {
+          setIsScheduling(true);
+          const scheduledDate = new Date(post.scheduledAt);
+          setScheduleDate(scheduledDate);
+          const hours = scheduledDate.getHours().toString().padStart(2, "0");
+          const minutes = scheduledDate.getMinutes() < 30 ? "00" : "30";
+          setScheduleTime(`${hours}:${minutes}`);
+        }
+      } catch (error) {
+        console.error("Failed to fetch post:", error);
+        if (!cancelled) {
+          toast.error("Failed to load post");
+          router.replace("/dashboard/posts");
+        }
+      } finally {
+        if (!cancelled) setPostLoading(false);
+      }
+    };
+    fetchPost();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentOrganization, postId]);
+
+  // Fetch accounts
   useEffect(() => {
     let cancelled = false;
     const fetchAccounts = async () => {
       if (!currentOrganization) return;
       try {
-        const response = await api.get<{ success: boolean; data: SocialAccount[] }>(
-          endpoints.accounts.list(currentOrganization.id)
-        );
+        const response = await api.get<{
+          success: boolean;
+          data: SocialAccount[];
+        }>(endpoints.accounts.list(currentOrganization.id));
         if (cancelled) return;
         setAccounts(response.data ?? []);
       } catch (error) {
@@ -92,7 +165,9 @@ export default function NewPostPage() {
       }
     };
     fetchAccounts();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [currentOrganization]);
 
   // Fetch Pinterest boards when Pinterest accounts are selected
@@ -111,7 +186,7 @@ export default function NewPostPage() {
           setPinterestBoards((prev) => ({ ...prev, [account.id]: res.data ?? [] }));
         })
         .catch(() => {
-          // Silently fail - boards will just not be available
+          // Silently fail
         });
     }
   }, [selectedAccounts, accounts, currentOrganization]);
@@ -119,26 +194,32 @@ export default function NewPostPage() {
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
-      mediaPreviewsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      newMediaPreviewsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
+  const totalMediaCount = existingMediaUrls.length + newMediaFiles.length;
+
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length + mediaFiles.length > 10) {
+    if (files.length + totalMediaCount > 10) {
       toast.error("Maximum 10 media files allowed");
       return;
     }
 
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setMediaFiles((prev) => [...prev, ...files]);
-    setMediaPreviews((prev) => [...prev, ...newPreviews]);
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setNewMediaFiles((prev) => [...prev, ...files]);
+    setNewMediaPreviews((prev) => [...prev, ...previews]);
   };
 
-  const handleRemoveMedia = (index: number) => {
-    URL.revokeObjectURL(mediaPreviews[index]);
-    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
-    setMediaPreviews((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveExistingMedia = (index: number) => {
+    setExistingMediaUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveNewMedia = (index: number) => {
+    URL.revokeObjectURL(newMediaPreviews[index]);
+    setNewMediaFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewMediaPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAccountToggle = (accountId: string) => {
@@ -164,19 +245,20 @@ export default function NewPostPage() {
     return metadata;
   };
 
-  const uploadMedia = async (): Promise<string[]> => {
-    if (!currentOrganization || mediaFiles.length === 0) return [];
+  const uploadNewMedia = async (): Promise<string[]> => {
+    if (!currentOrganization || newMediaFiles.length === 0) return [];
 
     const uploadedUrls: string[] = [];
-    for (const file of mediaFiles) {
+    for (const file of newMediaFiles) {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await api.post<{ success: boolean; data: { url: string } }>(
-        endpoints.media.upload(currentOrganization.id),
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      const response = await api.post<{
+        success: boolean;
+        data: { url: string };
+      }>(endpoints.media.upload(currentOrganization.id), formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       uploadedUrls.push(response.data.url);
     }
     return uploadedUrls;
@@ -187,7 +269,7 @@ export default function NewPostPage() {
     const isValid = await form.trigger();
     if (!isValid) return;
     const content = form.getValues("content");
-    if (!content && mediaFiles.length === 0) {
+    if (!content && totalMediaCount === 0) {
       toast.error("Please add some content or media");
       return;
     }
@@ -198,23 +280,30 @@ export default function NewPostPage() {
 
     setLoading(true);
     try {
-      const mediaUrls = await uploadMedia();
+      const uploadedNewUrls = await uploadNewMedia();
+      const mediaUrls = [...existingMediaUrls, ...uploadedNewUrls];
 
-      await api.post(
-        endpoints.posts.create(currentOrganization.id),
-        {
-          content,
-          mediaUrls,
-          accountIds: selectedAccounts,
-          platformMetadata: buildPlatformMetadata(),
-        }
-      );
+      let scheduledAt: string | undefined;
+      if (isScheduling && scheduleDate) {
+        const [hours, minutes] = scheduleTime.split(":").map(Number);
+        const scheduled = new Date(scheduleDate);
+        scheduled.setHours(hours, minutes, 0, 0);
+        scheduledAt = scheduled.toISOString();
+      }
 
-      toast.success("Draft saved");
-      router.push("/dashboard/posts");
+      await api.put(endpoints.posts.update(currentOrganization.id, postId), {
+        content,
+        mediaUrls,
+        accountIds: selectedAccounts,
+        scheduledAt: scheduledAt || null,
+        platformMetadata: buildPlatformMetadata(),
+      });
+
+      toast.success("Post updated");
+      router.push(`/dashboard/posts/${postId}`);
     } catch (error) {
-      console.error("Failed to save draft:", error);
-      toast.error("Failed to save draft");
+      console.error("Failed to update post:", error);
+      toast.error("Failed to update post");
     } finally {
       setLoading(false);
     }
@@ -225,7 +314,7 @@ export default function NewPostPage() {
     const isValid = await form.trigger();
     if (!isValid) return;
     const content = form.getValues("content");
-    if (!content && mediaFiles.length === 0) {
+    if (!content && totalMediaCount === 0) {
       toast.error("Please add some content or media");
       return;
     }
@@ -242,7 +331,8 @@ export default function NewPostPage() {
 
     setLoading(true);
     try {
-      const mediaUrls = await uploadMedia();
+      const uploadedNewUrls = await uploadNewMedia();
+      const mediaUrls = [...existingMediaUrls, ...uploadedNewUrls];
 
       let scheduledAt: string | undefined;
       if (!immediate && scheduleDate) {
@@ -252,42 +342,64 @@ export default function NewPostPage() {
         scheduledAt = scheduled.toISOString();
       }
 
-      const createResponse = await api.post<{ success: boolean; data: Post & { id: string } }>(
-        endpoints.posts.create(currentOrganization.id),
-        {
-          content,
-          mediaUrls,
-          accountIds: selectedAccounts,
-          scheduledAt,
-          platformMetadata: buildPlatformMetadata(),
-        }
-      );
+      await api.put(endpoints.posts.update(currentOrganization.id, postId), {
+        content,
+        mediaUrls,
+        accountIds: selectedAccounts,
+        scheduledAt: scheduledAt || null,
+        platformMetadata: buildPlatformMetadata(),
+      });
 
       if (immediate) {
-        const postId = createResponse.data.id;
         await api.post(
           endpoints.posts.publish(currentOrganization.id, postId)
         );
       }
 
       toast.success(immediate ? "Post published!" : "Post scheduled!");
-      router.push("/dashboard/posts");
+      router.push(`/dashboard/posts/${postId}`);
     } catch (error) {
       console.error("Failed to publish post:", error);
-      toast.error(immediate ? "Failed to publish post" : "Failed to schedule post");
+      toast.error(
+        immediate ? "Failed to publish post" : "Failed to schedule post"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  if (postLoading || accountsLoading) {
+    return (
+      <>
+        <Header
+          title="Edit Post"
+          description="Edit and update your post"
+        />
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Header
-        title="Create Post"
-        description="Create and schedule content for your social accounts"
+        title="Edit Post"
+        description="Edit and update your post"
       />
 
       <div className="p-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-4 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          onClick={() => router.push(`/dashboard/posts/${postId}`)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Post
+        </Button>
+
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -296,14 +408,16 @@ export default function NewPostPage() {
               <CardHeader>
                 <CardTitle className="text-gray-900">Content</CardTitle>
                 <CardDescription className="text-gray-500">
-                  Write your post caption and add media
+                  Edit your post caption and media
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Form {...form}>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="content" className="text-gray-800">Caption</Label>
+                      <Label htmlFor="content" className="text-gray-800">
+                        Caption
+                      </Label>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -341,22 +455,45 @@ export default function NewPostPage() {
                 <div className="space-y-2">
                   <Label className="text-gray-800">Media</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {mediaPreviews.map((preview, index) => (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-200">
+                    {/* Existing media */}
+                    {existingMediaUrls.map((url, index) => (
+                      <div
+                        key={`existing-${index}`}
+                        className="relative aspect-square rounded-lg overflow-hidden bg-gray-200"
+                      >
                         <img
-                          src={preview}
+                          src={url}
                           alt={`Media ${index + 1}`}
                           className="h-full w-full object-cover"
                         />
                         <button
-                          onClick={() => handleRemoveMedia(index)}
+                          onClick={() => handleRemoveExistingMedia(index)}
                           className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
                         >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
                     ))}
-                    {mediaPreviews.length < 10 && (
+                    {/* New media previews */}
+                    {newMediaPreviews.map((preview, index) => (
+                      <div
+                        key={`new-${index}`}
+                        className="relative aspect-square rounded-lg overflow-hidden bg-gray-200"
+                      >
+                        <img
+                          src={preview}
+                          alt={`New media ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          onClick={() => handleRemoveNewMedia(index)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {totalMediaCount < 10 && (
                       <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
                         <Upload className="h-8 w-8 text-gray-400 mb-2" />
                         <span className="text-xs text-gray-400">Upload</span>
@@ -386,13 +523,11 @@ export default function NewPostPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {accountsLoading ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
-                  </div>
-                ) : accounts.length === 0 ? (
+                {accounts.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-sm text-gray-500 mb-3">No accounts connected</p>
+                    <p className="text-sm text-gray-500 mb-3">
+                      No accounts connected
+                    </p>
                     <Button
                       variant="outline"
                       size="sm"
@@ -410,16 +545,26 @@ export default function NewPostPage() {
                           <Checkbox
                             id={account.id}
                             checked={selectedAccounts.includes(account.id)}
-                            onCheckedChange={() => handleAccountToggle(account.id)}
+                            onCheckedChange={() =>
+                              handleAccountToggle(account.id)
+                            }
                           />
                           <label
                             htmlFor={account.id}
                             className="flex items-center gap-2 cursor-pointer flex-1"
                           >
-                            <PlatformIcon platform={account.platform} size={32} className="rounded-full" />
+                            <PlatformIcon
+                              platform={account.platform}
+                              size={32}
+                              className="rounded-full"
+                            />
                             <div>
-                              <p className="text-sm text-gray-900">@{account.username}</p>
-                              <p className="text-xs text-gray-500 capitalize">{account.platform}</p>
+                              <p className="text-sm text-gray-900">
+                                @{account.username}
+                              </p>
+                              <p className="text-xs text-gray-500 capitalize">
+                                {account.platform}
+                              </p>
                             </div>
                           </label>
                         </div>
@@ -471,7 +616,11 @@ export default function NewPostPage() {
                     variant={!isScheduling ? "default" : "outline"}
                     size="sm"
                     onClick={() => setIsScheduling(false)}
-                    className={!isScheduling ? "bg-coral-500" : "border-gray-300 text-gray-700"}
+                    className={
+                      !isScheduling
+                        ? "bg-coral-500"
+                        : "border-gray-300 text-gray-700"
+                    }
                   >
                     Post Now
                   </Button>
@@ -479,7 +628,11 @@ export default function NewPostPage() {
                     variant={isScheduling ? "default" : "outline"}
                     size="sm"
                     onClick={() => setIsScheduling(true)}
-                    className={isScheduling ? "bg-coral-500" : "border-gray-300 text-gray-700"}
+                    className={
+                      isScheduling
+                        ? "bg-coral-500"
+                        : "border-gray-300 text-gray-700"
+                    }
                   >
                     Schedule
                   </Button>
@@ -494,12 +647,16 @@ export default function NewPostPage() {
                           className="w-full justify-start border-gray-300 bg-gray-100 text-gray-900 hover:bg-gray-200"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
+                          {scheduleDate
+                            ? format(scheduleDate, "PPP")
+                            : "Pick a date"}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="bg-white border-gray-200">
                         <DialogHeader>
-                          <DialogTitle className="text-gray-900">Select Date</DialogTitle>
+                          <DialogTitle className="text-gray-900">
+                            Select Date
+                          </DialogTitle>
                         </DialogHeader>
                         <Calendar
                           mode="single"
@@ -513,7 +670,10 @@ export default function NewPostPage() {
 
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-500" />
-                      <Select value={scheduleTime} onValueChange={setScheduleTime}>
+                      <Select
+                        value={scheduleTime}
+                        onValueChange={setScheduleTime}
+                      >
                         <SelectTrigger className="flex-1 bg-gray-100 border-gray-300 text-gray-900">
                           <SelectValue />
                         </SelectTrigger>
@@ -559,7 +719,7 @@ export default function NewPostPage() {
                 className="w-full border-gray-300 text-gray-700 hover:bg-gray-200"
               >
                 <Save className="mr-2 h-4 w-4" />
-                Save as Draft
+                Save Changes
               </Button>
             </div>
           </div>

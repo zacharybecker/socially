@@ -38,6 +38,7 @@ const createPostSchema = z.object({
   mediaUrls: z.array(z.string().url()).max(10).default([]),
   accountIds: z.array(z.string().min(1)).min(1, "At least one account must be selected"),
   scheduledAt: z.string().datetime().nullable().optional(),
+  platformMetadata: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
 });
 
 const updatePostSchema = z.object({
@@ -45,6 +46,7 @@ const updatePostSchema = z.object({
   mediaUrls: z.array(z.string().url()).max(10).optional(),
   accountIds: z.array(z.string().min(1)).optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
+  platformMetadata: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
 });
 
 const schedulePostSchema = z.object({
@@ -90,7 +92,7 @@ export async function postRoutes(fastify: FastifyInstance) {
     { preHandler: [authenticate, requireOrgMembership, requireQuota("postsCreated")] },
     async (request, reply) => {
       const { orgId } = request.params;
-      const { content, mediaUrls, scheduledAt, accountIds } = validateBody(createPostSchema, request.body);
+      const { content, mediaUrls, scheduledAt, accountIds, platformMetadata } = validateBody(createPostSchema, request.body);
 
       if (!content && mediaUrls.length === 0) {
         throw createError("Content or media is required", 400);
@@ -112,6 +114,7 @@ export async function postRoutes(fastify: FastifyInstance) {
         status: "draft" as const,
         platformPostId: null,
         errorMessage: null,
+        metadata: platformMetadata?.[accountId] || null,
       }));
 
       const now = Timestamp.now();
@@ -189,7 +192,7 @@ export async function postRoutes(fastify: FastifyInstance) {
     { preHandler: [authenticate, requireOrgMembership] },
     async (request, reply) => {
       const { orgId, postId } = request.params;
-      const { content, mediaUrls, scheduledAt, accountIds } = validateBody(updatePostSchema, request.body);
+      const { content, mediaUrls, scheduledAt, accountIds, platformMetadata } = validateBody(updatePostSchema, request.body);
 
       const postDoc = await db.post(orgId, postId).get();
 
@@ -222,6 +225,7 @@ export async function postRoutes(fastify: FastifyInstance) {
           status: "draft" as const,
           platformPostId: null,
           errorMessage: null,
+          metadata: platformMetadata?.[accountId] || null,
         }));
       }
 

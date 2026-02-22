@@ -107,6 +107,7 @@ export interface PostPlatform {
   status: PostStatus;
   platformPostId: string | null;
   errorMessage: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface ApprovalRequest {

@@ -127,6 +127,23 @@ export async function publishToPinterest(
   };
 }
 
+export async function getPinterestBoards(
+  accessToken: string
+): Promise<Array<{ id: string; name: string; description: string; privacy: string }>> {
+  const response = await axios.get(`${PINTEREST_API_URL}/boards`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return (response.data.items || []).map((board: Record<string, unknown>) => ({
+    id: board.id as string,
+    name: board.name as string,
+    description: (board.description as string) || "",
+    privacy: (board.privacy as string) || "PUBLIC",
+  }));
+}
+
 export async function getPinterestPinMetrics(
   accessToken: string,
   pinId: string
