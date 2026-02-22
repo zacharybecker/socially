@@ -48,6 +48,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { SocialAccount, Post } from "@/types";
 import { api, endpoints } from "@/lib/api";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 
 export default function NewPostPage() {
   const router = useRouter();
@@ -377,9 +378,7 @@ export default function NewPostPage() {
                           htmlFor={account.id}
                           className="flex items-center gap-2 cursor-pointer flex-1"
                         >
-                          <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white">
-                            {account.platform === "tiktok" ? "T" : "I"}
-                          </div>
+                          <PlatformIcon platform={account.platform} size={32} className="rounded-full" />
                           <div>
                             <p className="text-sm text-white">@{account.username}</p>
                             <p className="text-xs text-slate-400 capitalize">{account.platform}</p>
