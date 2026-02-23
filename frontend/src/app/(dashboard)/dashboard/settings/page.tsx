@@ -14,6 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Building2, CreditCard, Bell, Shield, Sparkles, X, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { UpgradeDialog } from "@/components/billing/upgrade-dialog";
+import { PlanTier } from "@/types";
+import { Switch } from "@/components/ui/switch";
 
 export default function SettingsPage() {
   const { userProfile, updateUserProfile, resetPassword } = useAuth();
@@ -41,6 +44,41 @@ export default function SettingsPage() {
   const [newAvoidPhrase, setNewAvoidPhrase] = useState("");
   const [newSample, setNewSample] = useState("");
   const [savingBrandVoice, setSavingBrandVoice] = useState(false);
+
+  // Billing state
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [targetPlan, setTargetPlan] = useState<PlanTier | null>(null);
+  const currentPlan = userProfile?.planTier || "free";
+  const currentPlanLabel = currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1);
+
+  // Notification settings (persisted to localStorage)
+  const [notificationSettings, setNotificationSettings] = useState(() => {
+    const defaults = {
+      postPublished: true,
+      postFailed: true,
+      approvalNeeded: true,
+      approvalResult: true,
+      memberJoined: false,
+      weeklyDigest: true,
+    };
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("notificationSettings");
+        if (saved) return { ...defaults, ...JSON.parse(saved) };
+      } catch {
+        // Ignore corrupted localStorage
+      }
+    }
+    return defaults;
+  });
+
+  const updateNotificationSetting = (key: string, value: boolean) => {
+    setNotificationSettings((prev: Record<string, boolean>) => {
+      const updated = { ...prev, [key]: value };
+      localStorage.setItem("notificationSettings", JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -152,6 +190,13 @@ export default function SettingsPage() {
     creator: ["5 social accounts", "Unlimited posts", "AI content generation", "Advanced analytics"],
     business: ["15 social accounts", "Team collaboration (3 users)", "Priority support"],
     agency: ["Unlimited accounts", "Unlimited team members", "White-label options", "API access"],
+  };
+
+  const planPrices: Record<string, string> = {
+    free: "$0",
+    creator: "$15",
+    business: "$49",
+    agency: "$149",
   };
 
   return (
@@ -282,12 +327,10 @@ export default function SettingsPage() {
                       <Shield className="h-5 w-5 text-gray-500" />
                       <div>
                         <p className="text-sm font-medium text-gray-900">Two-Factor Auth</p>
-                        <p className="text-xs text-gray-500">Not available yet</p>
+                        <p className="text-xs text-gray-500">Adds an extra layer of security. This feature is planned for a future release.</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-200" disabled>
-                      Enable
-                    </Button>
+                    <Badge className="bg-amber-100 text-amber-700 border-amber-300">Planned</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -379,21 +422,21 @@ export default function SettingsPage() {
                 <CardHeader>
                   <CardTitle className="text-gray-900">Current Plan</CardTitle>
                   <CardDescription className="text-gray-500">
-                    You are currently on the Free plan
+                    You are currently on the {currentPlanLabel} plan
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between p-4 rounded-lg bg-gray-100 mb-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-gray-900">Free</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{currentPlanLabel}</h3>
                         <Badge className="bg-gray-300">Current</Badge>
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">$0<span className="text-sm font-normal text-gray-500">/month</span></p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">{planPrices[currentPlan]}<span className="text-sm font-normal text-gray-500">/month</span></p>
                     </div>
                   </div>
                   <ul className="space-y-2">
-                    {planFeatures.free.map((feature, index) => (
+                    {planFeatures[currentPlan].map((feature, index) => (
                       <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
                         <div className="h-1.5 w-1.5 rounded-full bg-coral-500" />
                         {feature}
@@ -415,10 +458,14 @@ export default function SettingsPage() {
                     { name: "Creator", price: "$15", features: planFeatures.creator },
                     { name: "Business", price: "$49", features: planFeatures.business },
                     { name: "Agency", price: "$149", features: planFeatures.agency },
-                  ].map((plan) => (
+                  ].filter((plan) => plan.name.toLowerCase() !== currentPlan).map((plan) => (
                     <div
                       key={plan.name}
                       className="p-4 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setTargetPlan(plan.name.toLowerCase() as PlanTier);
+                        setUpgradeDialogOpen(true);
+                      }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-gray-900">{plan.name}</h4>
@@ -435,7 +482,10 @@ export default function SettingsPage() {
                   ))}
                   <Button
                     className="w-full bg-coral-500 hover:bg-coral-600"
-                    onClick={() => toast.info("Billing coming soon")}
+                    onClick={() => {
+                      setTargetPlan("creator");
+                      setUpgradeDialogOpen(true);
+                    }}
                   >
                     Upgrade Now
                   </Button>
@@ -453,8 +503,29 @@ export default function SettingsPage() {
                   Choose how you want to be notified
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">Notification settings coming soon.</p>
+              <CardContent className="space-y-6">
+                {[
+                  { key: "postPublished", label: "Post Published", description: "Get notified when a post is successfully published" },
+                  { key: "postFailed", label: "Post Failed", description: "Get notified when a post fails to publish" },
+                  { key: "approvalNeeded", label: "Approval Needed", description: "Get notified when a post is submitted for your approval" },
+                  { key: "approvalResult", label: "Approval Result", description: "Get notified when your post is approved or rejected" },
+                  { key: "memberJoined", label: "Member Joined", description: "Get notified when a new member joins your organization" },
+                  { key: "weeklyDigest", label: "Weekly Digest", description: "Receive a weekly summary of your social media performance" },
+                ].map((setting) => (
+                  <div key={setting.key} className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-gray-900">{setting.label}</Label>
+                      <p className="text-xs text-gray-500">{setting.description}</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings[setting.key]}
+                      onCheckedChange={(checked) => updateNotificationSetting(setting.key, checked)}
+                    />
+                  </div>
+                ))}
+                <p className="text-xs text-gray-400">
+                  Notification delivery will be available in a future update. Your preferences are saved locally.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -635,6 +706,12 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <UpgradeDialog
+        open={upgradeDialogOpen}
+        onOpenChange={setUpgradeDialogOpen}
+        targetPlan={targetPlan}
+      />
     </>
   );
 }

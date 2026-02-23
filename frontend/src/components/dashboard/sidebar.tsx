@@ -60,6 +60,7 @@ const navigation = [
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "AI Studio", href: "/dashboard/ai", icon: Sparkles },
   { name: "Inbox", href: "/dashboard/inbox", icon: Inbox },
+  { name: "Activity", href: "/dashboard/activity", icon: FileText },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

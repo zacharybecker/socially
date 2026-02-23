@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Header } from "@/components/dashboard/header";
-import { useOrganization } from "@/lib/hooks";
+import { useOrganization, useAuth } from "@/lib/hooks";
 import { createPostSchema, type CreatePostFormData } from "@/lib/schemas";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ import {
   Send,
   Save,
   Loader2,
+  Shield,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -53,6 +54,15 @@ import { PlatformIcon } from "@/components/ui/platform-icon";
 export default function NewPostPage() {
   const router = useRouter();
   const { currentOrganization } = useOrganization();
+  const { user } = useAuth();
+
+  const getUserRole = () => {
+    if (!user || !currentOrganization) return null;
+    if (currentOrganization.ownerId === user.uid) return "admin";
+    const member = currentOrganization.members?.find((m) => m.userId === user.uid);
+    return member?.role || null;
+  };
+  const isAdmin = getUserRole() === "admin";
 
   const form = useForm<CreatePostFormData>({
     resolver: zodResolver(createPostSchema),
@@ -275,6 +285,43 @@ export default function NewPostPage() {
     } catch (error) {
       console.error("Failed to publish post:", error);
       toast.error(immediate ? "Failed to publish post" : "Failed to schedule post");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitForApproval = async () => {
+    if (!currentOrganization) return;
+    const isValid = await form.trigger();
+    if (!isValid) return;
+    const content = form.getValues("content");
+    if (!content && mediaFiles.length === 0) {
+      toast.error("Please add some content or media");
+      return;
+    }
+    if (selectedAccounts.length === 0) {
+      toast.error("Please select at least one account");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const mediaUrls = await uploadMedia();
+      const createResponse = await api.post<{ success: boolean; data: Post & { id: string } }>(
+        endpoints.posts.create(currentOrganization.id),
+        {
+          content,
+          mediaUrls,
+          accountIds: selectedAccounts,
+          platformMetadata: buildPlatformMetadata(),
+        }
+      );
+      const postId = createResponse.data.id;
+      await api.post(endpoints.approval.submit(currentOrganization.id, postId));
+      toast.success("Post submitted for approval");
+      router.push("/dashboard/posts");
+    } catch {
+      toast.error("Failed to submit post for approval");
     } finally {
       setLoading(false);
     }
@@ -561,6 +608,21 @@ export default function NewPostPage() {
                 <Save className="mr-2 h-4 w-4" />
                 Save as Draft
               </Button>
+              {!isAdmin && (
+                <Button
+                  onClick={handleSubmitForApproval}
+                  disabled={loading}
+                  variant="outline"
+                  className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Shield className="mr-2 h-4 w-4" />
+                  )}
+                  Submit for Approval
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -27,11 +27,14 @@ import {
   Send,
   Calendar,
   AlertCircle,
+  Shield,
 } from "lucide-react";
 import { Post, PostStatus, SocialAccount } from "@/types";
 import { format } from "date-fns";
 import { api, endpoints } from "@/lib/api";
-import { useOrganization } from "@/lib/hooks";
+import { useAuth, useOrganization } from "@/lib/hooks";
+import { Textarea } from "@/components/ui/textarea";
+import { CommentsSection } from "@/components/posts/comments-section";
 import { toast } from "sonner";
 
 const statusConfig: Record<PostStatus, { label: string; color: string; icon: React.ElementType }> = {
@@ -58,6 +61,7 @@ export default function PostDetailPage() {
   const postId = params.postId as string;
   const { currentOrganization } = useOrganization();
   const orgId = currentOrganization?.id;
+  const { user } = useAuth();
 
   const [post, setPost] = useState<Post | null>(null);
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
@@ -65,6 +69,20 @@ export default function PostDetailPage() {
   const [publishing, setPublishing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [submittingApproval, setSubmittingApproval] = useState(false);
+  const [approvingPost, setApprovingPost] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectComment, setRejectComment] = useState("");
+  const [rejectingPost, setRejectingPost] = useState(false);
+
+  const getUserRole = () => {
+    if (!user || !currentOrganization) return null;
+    if (currentOrganization.ownerId === user.uid) return "admin";
+    const member = currentOrganization.members?.find((m) => m.userId === user.uid);
+    return member?.role || null;
+  };
+  const userRole = getUserRole();
+  const isAdmin = userRole === "admin";
 
   useEffect(() => {
     let cancelled = false;
@@ -116,6 +134,53 @@ export default function PostDetailPage() {
     } catch {
       toast.error("Failed to delete post");
       setDeleting(false);
+    }
+  };
+
+  const handleSubmitForApproval = async () => {
+    if (!orgId || !postId) return;
+    setSubmittingApproval(true);
+    try {
+      await api.post(endpoints.approval.submit(orgId, postId));
+      toast.success("Post submitted for approval");
+      const postRes = await api.get<{ success: boolean; data: Post }>(endpoints.posts.get(orgId, postId));
+      setPost(postRes.data ?? null);
+    } catch {
+      toast.error("Failed to submit for approval");
+    } finally {
+      setSubmittingApproval(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!orgId || !postId) return;
+    setApprovingPost(true);
+    try {
+      await api.post(endpoints.approval.approve(orgId, postId));
+      toast.success("Post approved");
+      const postRes = await api.get<{ success: boolean; data: Post }>(endpoints.posts.get(orgId, postId));
+      setPost(postRes.data ?? null);
+    } catch {
+      toast.error("Failed to approve post");
+    } finally {
+      setApprovingPost(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!orgId || !postId || !rejectComment.trim()) return;
+    setRejectingPost(true);
+    try {
+      await api.post(endpoints.approval.reject(orgId, postId), { comment: rejectComment.trim() });
+      toast.success("Post rejected");
+      setRejectDialogOpen(false);
+      setRejectComment("");
+      const postRes = await api.get<{ success: boolean; data: Post }>(endpoints.posts.get(orgId, postId));
+      setPost(postRes.data ?? null);
+    } catch {
+      toast.error("Failed to reject post");
+    } finally {
+      setRejectingPost(false);
     }
   };
 
@@ -274,6 +339,8 @@ export default function PostDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            <CommentsSection postId={postId} />
           </div>
 
           {/* Right Column - 1 col */}
@@ -443,6 +510,45 @@ export default function PostDetailPage() {
                       </Link>
                     </Button>
                   )}
+                  {post.status === "draft" && !isAdmin && (
+                    <Button
+                      className="w-full border-gray-200 text-gray-700"
+                      variant="outline"
+                      onClick={handleSubmitForApproval}
+                      disabled={submittingApproval}
+                    >
+                      {submittingApproval ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Shield className="mr-2 h-4 w-4" />
+                      )}
+                      Submit for Approval
+                    </Button>
+                  )}
+                  {post.status === "pending_approval" && isAdmin && (
+                    <>
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        onClick={handleApprove}
+                        disabled={approvingPost}
+                      >
+                        {approvingPost ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Approve
+                      </Button>
+                      <Button
+                        className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                        variant="outline"
+                        onClick={() => setRejectDialogOpen(true)}
+                      >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
                   {canDelete && (
                     <Button
                       variant="outline"
@@ -453,7 +559,7 @@ export default function PostDetailPage() {
                       Delete Post
                     </Button>
                   )}
-                  {isReadOnly && !canRetry && (
+                  {isReadOnly && !canRetry && !(post.status === "pending_approval" && isAdmin) && (
                     <p className="text-sm text-gray-500 text-center">
                       This post is {post.status === "publishing" ? "currently publishing" : post.status.replace("_", " ")}.
                     </p>
@@ -493,6 +599,45 @@ export default function PostDetailPage() {
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent className="bg-white border-gray-200">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Reject Post</DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Please provide a reason for rejecting this post.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={rejectComment}
+            onChange={(e) => setRejectComment(e.target.value)}
+            placeholder="Reason for rejection..."
+            className="min-h-[100px] bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-400"
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="border-gray-200 text-gray-700"
+              onClick={() => setRejectDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleReject}
+              disabled={rejectingPost || !rejectComment.trim()}
+            >
+              {rejectingPost ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4" />
+              )}
+              Reject
             </Button>
           </DialogFooter>
         </DialogContent>

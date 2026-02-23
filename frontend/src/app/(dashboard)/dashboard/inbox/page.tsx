@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/dashboard/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,10 +13,40 @@ import {
   Mail,
   LinkIcon,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
+import { useOrganization } from "@/lib/hooks";
+import { api, endpoints } from "@/lib/api";
+import { ActivityLogEntry } from "@/types";
+import { formatDistanceToNow } from "date-fns";
 
 export default function InboxPage() {
   const [activeTab, setActiveTab] = useState("all");
+  const { currentOrganization } = useOrganization();
+  const [activityEntries, setActivityEntries] = useState<ActivityLogEntry[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchActivity() {
+      if (!currentOrganization?.id) {
+        setLoadingActivity(false);
+        return;
+      }
+      try {
+        const res = await api.get<{ success: boolean; data: ActivityLogEntry[] }>(
+          `${endpoints.activity.list(currentOrganization.id)}?limit=20`
+        );
+        if (!cancelled) setActivityEntries(res.data ?? []);
+      } catch {
+        // Silently fail
+      } finally {
+        if (!cancelled) setLoadingActivity(false);
+      }
+    }
+    fetchActivity();
+    return () => { cancelled = true; };
+  }, [currentOrganization?.id]);
 
   return (
     <>
@@ -38,12 +68,11 @@ export default function InboxPage() {
                   Unified Inbox
                 </h2>
                 <Badge className="bg-coral-500/10 text-coral-500 border-coral-500/30">
-                  Coming Soon
+                  Preview
                 </Badge>
               </div>
               <p className="text-sm text-gray-500">
-                Manage all your DMs, comments, and mentions from every connected
-                platform in one place.
+                View recent team activity below. Full DM, comment, and mention management from every connected platform is coming soon.
               </p>
             </div>
           </div>
@@ -80,11 +109,42 @@ export default function InboxPage() {
               </div>
 
               <TabsContent value="all" className="mt-0">
-                <EmptyState
-                  icon={<Mail className="h-8 w-8 text-gray-400" />}
-                  title="No messages yet"
-                  description="When you connect your social accounts, all your DMs, comments, and mentions will appear here."
-                />
+                {loadingActivity ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                ) : activityEntries.length === 0 ? (
+                  <EmptyState
+                    icon={<Mail className="h-8 w-8 text-gray-400" />}
+                    title="No recent activity"
+                    description="Activity from your organization will appear here."
+                  />
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {activityEntries.map((entry) => (
+                      <div key={entry.id} className="flex items-start gap-3 p-4 hover:bg-gray-100 transition-colors">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 shrink-0">
+                          <Mail className="h-4 w-4 text-gray-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              {entry.userDisplayName || "System"}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700">{entry.action}</p>
+                          {entry.details && (
+                            <p className="text-xs text-gray-500 mt-0.5">{entry.details}</p>
+                          )}
+                        </div>
+                        <Badge className="bg-gray-200 text-gray-600 shrink-0">{entry.resourceType}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="comments" className="mt-0">
