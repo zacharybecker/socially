@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/dashboard/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,8 @@ export default function PostsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const { currentOrganization } = useOrganization();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("q") || "";
 
   useEffect(() => {
     let cancelled = false;
@@ -80,8 +83,9 @@ export default function PostsPage() {
   const accountMap = new Map(accounts.map((a) => [a.id, a.username]));
 
   const filteredPosts = posts.filter((post) => {
-    if (activeTab === "all") return true;
-    return post.status === activeTab;
+    const matchesTab = activeTab === "all" || post.status === activeTab;
+    const matchesSearch = !searchQuery || post.content?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
   });
 
   const handleDelete = async (postId: string) => {
@@ -127,6 +131,15 @@ export default function PostsPage() {
             </TabsTrigger>
             <TabsTrigger value="failed" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
               Failed
+            </TabsTrigger>
+            <TabsTrigger value="pending_approval" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
+              Pending Approval
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
+              Approved
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="data-[state=active]:bg-gray-200 text-gray-700 data-[state=active]:text-gray-900">
+              Rejected
             </TabsTrigger>
           </TabsList>
 
